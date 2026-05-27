@@ -1,130 +1,155 @@
 @import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+/* ============================================================
+   BREW FM — DESIGN TOKENS V1
+   ============================================================
+   2 couleurs source qui s'inversent selon le contexte :
+   - Brew Black  #05180A  (noir vert sombre)
+   - Brew Acid   #A6FF3E  (vert acide)
+   
+   Toutes les nuances intermédiaires sont dérivées de ces 2 valeurs.
+   Typo : Inter Variable (chargée via next/font dans layout.tsx).
+   ============================================================ */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+@theme {
+  /* === Couleurs source === */
+  --color-brew-black: #05180a;
+  --color-brew-acid: #a6ff3e;
+
+  /* === Échelle Brew Acid (vert) ===
+     Du plus pâle au plus saturé. */
+  --color-acid-50: #f1ffe0;
+  --color-acid-100: #e1ffbf;
+  --color-acid-200: #c8ff8a;
+  --color-acid-300: #b6ff66;
+  --color-acid-400: #a6ff3e;
+  /* = brew-acid (DEFAULT) */
+  --color-acid-500: #8de52a;
+  --color-acid-600: #6cc213;
+  --color-acid-700: #4f9509;
+  --color-acid-800: #356804;
+  --color-acid-900: #1f3f02;
+
+  /* === Échelle Brew Black (noir vert) ===
+     Du plus clair au plus profond. */
+  --color-black-50: #ecf2ee;
+  --color-black-100: #c9d6cd;
+  --color-black-200: #93ad9c;
+  --color-black-300: #5e856b;
+  --color-black-400: #305a3f;
+  --color-black-500: #1c3a27;
+  --color-black-600: #11281a;
+  --color-black-700: #0a1d10;
+  --color-black-800: #05180a;
+  /* = brew-black (DEFAULT) */
+  --color-black-900: #020a04;
+
+  /* === Typographie === */
+  --font-sans: "Inter", "Inter Fallback", system-ui, sans-serif;
+  --font-display: "Inter", "Inter Fallback", system-ui, sans-serif;
+
+  /* === Spacing (échelle 4 → 40px par 4) === */
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-7: 28px;
+  --spacing-8: 32px;
+  --spacing-9: 36px;
+  --spacing-10: 40px;
+
+  /* === Radius === */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
 }
+
+/* ============================================================
+   TOKENS SHADCN — mappés sur les couleurs Brew FM
+   ============================================================
+   shadcn/ui utilise ces variables nommées (--background, etc.).
+   Mode dark = par défaut Brew FM (fond noir vert, texte vert acide).
+   Mode acid = utilisé pour le menu plein écran (inversé).
+   ============================================================ */
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Mode dark = mode par défaut Brew FM */
+  --background: var(--color-brew-black);
+  --foreground: var(--color-brew-acid);
+
+  --card: var(--color-black-700);
+  --card-foreground: var(--color-brew-acid);
+
+  --popover: var(--color-black-700);
+  --popover-foreground: var(--color-brew-acid);
+
+  --primary: var(--color-brew-acid);
+  --primary-foreground: var(--color-brew-black);
+
+  --secondary: var(--color-black-600);
+  --secondary-foreground: var(--color-brew-acid);
+
+  --muted: var(--color-black-700);
+  --muted-foreground: var(--color-acid-700);
+
+  --accent: var(--color-acid-500);
+  --accent-foreground: var(--color-brew-black);
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --border: var(--color-black-500);
+  --input: var(--color-black-600);
+  --ring: var(--color-brew-acid);
+
+  --radius: 0.5rem;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+/* Mode acid : appliquer la classe `.brew-acid` sur un container
+   (ex: la Sheet du menu plein écran) pour inverser le système. */
+.brew-acid {
+  --background: var(--color-brew-acid);
+  --foreground: var(--color-brew-black);
+
+  --card: var(--color-acid-500);
+  --card-foreground: var(--color-brew-black);
+
+  --primary: var(--color-brew-black);
+  --primary-foreground: var(--color-brew-acid);
+
+  --secondary: var(--color-acid-500);
+  --secondary-foreground: var(--color-brew-black);
+
+  --muted: var(--color-acid-500);
+  --muted-foreground: var(--color-black-600);
+
+  --border: var(--color-acid-700);
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
-  }
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Sélection : couleurs inversées pour rester lisible */
+::selection {
+  background-color: var(--color-brew-acid);
+  color: var(--color-brew-black);
+}
+
+.brew-acid ::selection {
+  background-color: var(--color-brew-black);
+  color: var(--color-brew-acid);
 }
