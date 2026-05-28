@@ -13,8 +13,11 @@
  *   Genre             → genres
  *   Date d'arrivée    → arrivedAt
  *   Instagram         → instagram
- *   Soundcloud        → soundcloud
  *   Spotify           → spotify
+ *   Soundcloud        → soundcloud
+ *   linktree          → linktree
+ *   TikTok            → TikTok
+ *   Youtube           → Youtube
  *   Shotgun URL       → shotgunUrl
  *   PassageBrew       → passageBrewUrl
  *   Shotgun Artist ID → shotgunArtistId
@@ -60,10 +63,13 @@ function mapNotionArtist(page: NotionPage): Artist {
     genres: extractMultiSelect(props.Genre),
     arrivedAt: extractDate(props["Date d'arrivée"]),
 
+    shotgunUrl: extractUrl(props["Shotgun URL"]),
+    linktree: extractUrl(props.Linktree),
+    spotify: extractUrl(props.Spotify),
     instagram: extractUrl(props.Instagram),
     soundcloud: extractUrl(props.Soundcloud),
-    spotify: extractUrl(props.Spotify),
-    shotgunUrl: extractUrl(props["Shotgun URL"]),
+    youtube: extractUrl(props.Youtube),
+    tiktok: extractUrl(props.Tiktok),
 
     passageBrewUrl: extractUrl(props.PassageBrew),
 

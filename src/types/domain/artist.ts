@@ -35,6 +35,9 @@ export type Artist = {
   instagram?: string;
   soundcloud?: string;
   spotify?: string;
+  linktree?: string;
+  tiktok?: string;
+  youtube?: string;
   shotgunUrl?: string;
 
   // CTA principal de la card artiste

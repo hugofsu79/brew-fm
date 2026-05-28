@@ -1,35 +1,56 @@
 /**
  * Navbar racine (Server Component).
  *
+ * Layout (cf. spec verrouillée) :
+ *   Desktop : [Logo] ←space-between→ [Dropdown events · Zone Twitch] [☰ spacer]
+ *   Mobile  : [Logo] ←space-between→ [Dropdown events]               [☰ spacer]
+ *
  * Responsabilités :
- *   - Fetch la cascade navbar côté serveur (Twitch + Notion + Shotgun)
- *   - Layout : NavbarMenuPanel (hamburger fixe top-left) + NavbarCascade (centre)
+ *   - Fetch les données navbar côté serveur (Shotgun + Twitch mock)
+ *   - Disposer Logo / NavbarEvents / NavbarTwitch dans la barre
  *
  * Pourquoi Server Component :
- *   - Le fetch des données se fait côté serveur (caching Next.js natif)
- *   - Aucun JS envoyé au navigateur pour la résolution de la cascade
- *   - Les composants interactifs (Cascade, MenuPanel) sont "use client"
- *     mais ils n'embarquent que la logique UI, pas les credentials API
+ *   - Fetch côté serveur (caching Next.js natif), credentials jamais exposés
+ *   - Les enfants interactifs (NavbarEvents, NavbarTwitch) sont "use client"
+ *     et ne reçoivent que des données déjà résolues
  *
- * Position : fixed top-0, full-width, z-40 (en dessous du menu z-50).
- * Le menu hamburger flotte par-dessus via NavbarMenuPanel.
+ * ⚠️ Le bouton hamburger reste géré par NavbarMenuPanel (fixed, on n'y touche pas).
+ *    Il flotte par-dessus la barre. Pour qu'il soit À DROITE et que rien ne passe
+ *    dessous :
+ *      1. Dans NavbarMenuPanel, change la position du bouton de `left-*` → `right-*`
+ *         (une seule classe à modifier).
+ *      2. Le <div> spacer ci-dessous (w-10) réserve la place à droite dans la barre.
+ *    Ajuste la largeur du spacer pour matcher exactement ton bouton ☰.
  */
 
 import { resolveNavbarItems } from "@/lib/cascade/resolve-navbar";
-import { NavbarCascade } from "./NavbarCascade";
+import { Logo } from "./Logo";
+import { NavbarEvents } from "./NavbarEvents";
 import { NavbarMenuPanel } from "./NavbarMenuPanel";
+import { NavbarTwitch } from "./NavbarTwitch";
 
 export async function Navbar() {
-  const resolution = await resolveNavbarItems();
+  const { events, twitch } = await resolveNavbarItems();
 
   return (
     <>
-      {/* Menu hamburger (fixed top-left, z-50) */}
+      {/* Menu hamburger (fixed, géré par le Panel — non modifié ici) */}
       <NavbarMenuPanel />
 
-      {/* Zone centrale cascade (sticky en haut, mobile-first) */}
-      <header className="sticky top-0 z-40 flex items-center justify-center bg-background/95 px-4 py-4 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80">
-        <NavbarCascade resolution={resolution} />
+      {/* Barre du haut */}
+      <header className="sticky top-0 z-40 flex items-center justify-between gap-4 bg-background/95 px-4 py-4 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80">
+        {/* Gauche : logo */}
+        <Logo />
+
+        {/* Droite : dropdown events + zone twitch + spacer hamburger */}
+        <div className="flex items-center gap-3">
+          <NavbarEvents events={events} />
+          {twitch && <NavbarTwitch status={twitch} />}
+
+          {/* Spacer : réserve la place du bouton ☰ (fixed) pour éviter le chevauchement.
+              Ajuste w-10 selon la taille réelle de ton hamburger. */}
+          <div className="w-10 shrink-0" aria-hidden="true" />
+        </div>
       </header>
     </>
   );
