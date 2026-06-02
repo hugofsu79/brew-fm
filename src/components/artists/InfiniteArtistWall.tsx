@@ -1,42 +1,18 @@
 "use client";
 
-/**
- * InfiniteArtistWall — Mur défilant infini d'artistes (5 colonnes desktop).
- *
- * Spécifications :
- *   - 5 colonnes desktop (3 tablet / 2 mobile)
- *   - Hauteur 70vh, overflow hidden
- *   - Mouvement vertical infini : col impaires haut→bas, col paires bas→haut
- *   - Vitesse de base : ~60s par cycle complet
- *   - Speed-up au scroll page : x1.5 quand l'utilisateur scrolle activement
- *   - Hover sur card : la COLONNE ENTIÈRE s'arrête (transition bezier douce)
- *                       + cette card passe de N&B à couleur
- *   - Click card → ouvre passageVideos[0] en nouvel onglet
- *
- * Implémentation :
- *   - Animation CSS pure (animation: scroll Xs linear infinite)
- *   - Speed-up : on modifie animation-duration en JS quand l'user scrolle
- *   - Hover stop : animation-play-state: paused sur la colonne hover
- *   - Doublons : chaque colonne contient 2× la liste pour fluidité infinie
- *   - Formes : clip-paths SVG (cardTop / cardBottom) en damier
- */
-
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Artist } from "@/types/domain/artist";
 
 const COLS_DESKTOP = 5;
-const BASE_DURATION_S = 60; // Vitesse de base
-const SCROLL_BOOST = 1.5; // Multiplicateur quand l'user scrolle
+const BASE_PX_PER_SECOND = 30;
+const SCROLL_BOOST_FACTOR = 1.5;
+const EASE_FACTOR = 0.08;
 
 type Variation = "top" | "bottom";
 
 function getVariation(index: number): Variation {
   return index % 2 === 0 ? "top" : "bottom";
 }
-
-// ---------------------------------------------------------------------------
-// Sous-composant : une card
-// ---------------------------------------------------------------------------
 
 function ArtistTile({ artist, variation }: { artist: Artist; variation: Variation }) {
   const clipId = variation === "top" ? "url(#card-clip-top)" : "url(#card-clip-bottom)";
@@ -60,56 +36,6 @@ function ArtistTile({ artist, variation }: { artist: Artist; variation: Variatio
   );
 }
 
-// ---------------------------------------------------------------------------
-// Sous-composant : une colonne (avec doublons + animation)
-// ---------------------------------------------------------------------------
-
-function ArtistColumn({
-  artists,
-  direction,
-  duration,
-}: {
-  artists: Artist[];
-  direction: "up" | "down";
-  duration: number;
-}) {
-  const [paused, setPaused] = useState(false);
-  // Doublons : on duplique la liste pour défilement infini sans coupure
-  const doubled = [
-    ...artists.map((a) => ({ artist: a, copy: 0 })),
-    ...artists.map((a) => ({ artist: a, copy: 1 })),
-  ];
-
-  const animationName = direction === "up" ? "scrollUp" : "scrollDown";
-
-  return (
-    <div
-      className="flex flex-col gap-6"
-      onPointerEnter={() => setPaused(true)}
-      onPointerLeave={() => setPaused(false)}
-      style={{
-        animationName,
-        animationDuration: `${duration}s`,
-        animationTimingFunction: "linear",
-        animationIterationCount: "infinite",
-        animationPlayState: paused ? "paused" : "running",
-        // Transition douce sur play-state ? Non, play-state n'est pas transitionable.
-        // Le "stop bezier doux" est obtenu via cubic-bezier sur animation-duration.
-        // Quand on pause, l'animation se fige (CSS standard). C'est instantané.
-        // Pour adoucir, on peut animer une variable séparée — pour V1 c'est OK ainsi.
-      }}
-    >
-      {doubled.map(({ artist, copy }, i) => (
-        <ArtistTile key={`${artist.id}-c${copy}`} artist={artist} variation={getVariation(i)} />
-      ))}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Définitions SVG (clip-paths)
-// ---------------------------------------------------------------------------
-
 function ClipPathDefs() {
   return (
     <svg width="0" height="0" className="absolute" aria-hidden="true">
@@ -126,66 +52,170 @@ function ClipPathDefs() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Composant principal
-// ---------------------------------------------------------------------------
+type ColumnState = {
+  positionY: number;
+  currentSpeed: number;
+  targetSpeed: number;
+  contentHeight: number;
+  isHovered: boolean;
+  baseDirection: 1 | -1;
+};
 
 export function InfiniteArtistWall({ artists }: { artists: Artist[] }) {
-  // Speed-up au scroll : on détecte si l'user est en train de scroller
-  // (debounce 150ms après dernier scroll → repasse en vitesse normale)
-  const [isScrolling, setIsScrolling] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const columnRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const stateRefs = useRef<ColumnState[]>([]);
+  const rafIdRef = useRef<number | null>(null);
+
+  const lastScrollY = useRef(0);
+  const lastScrollTime = useRef(0);
+  const scrollVelocity = useRef(0);
+
+  const [columns] = useState<Artist[][]>(() => {
+    const cols: Artist[][] = Array.from({ length: COLS_DESKTOP }, () => []);
+    artists.forEach((a, i) => {
+      cols[i % COLS_DESKTOP].push(a);
+    });
+    return cols;
+  });
+
+  useEffect(() => {
+    stateRefs.current = columns.map((_, colIdx) => ({
+      positionY: 0,
+      currentSpeed: 0,
+      targetSpeed: 0,
+      contentHeight: 0,
+      isHovered: false,
+      baseDirection: colIdx % 2 === 0 ? -1 : 1,
+    }));
+  }, [columns]);
+
+  useEffect(() => {
+    function measure() {
+      stateRefs.current.forEach((state, i) => {
+        const el = columnRefs.current[i];
+        if (el) {
+          state.contentHeight = el.scrollHeight / 2;
+          state.targetSpeed = BASE_PX_PER_SECOND * state.baseDirection;
+        }
+      });
+    }
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
 
   useEffect(() => {
     function onScroll() {
-      setIsScrolling(true);
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => setIsScrolling(false), 150);
+      const now = performance.now();
+      const dt = (now - lastScrollTime.current) / 1000;
+      if (dt > 0) {
+        const dy = window.scrollY - lastScrollY.current;
+        scrollVelocity.current = dy / dt;
+      }
+      lastScrollY.current = window.scrollY;
+      lastScrollTime.current = now;
     }
+    lastScrollY.current = window.scrollY;
+    lastScrollTime.current = performance.now();
     window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    let lastFrameTime = performance.now();
+
+    function frame(now: number) {
+      const dt = Math.min((now - lastFrameTime) / 1000, 0.05);
+      lastFrameTime = now;
+
+      scrollVelocity.current *= 0.9;
+      if (Math.abs(scrollVelocity.current) < 1) scrollVelocity.current = 0;
+
+      const scrollBoost = scrollVelocity.current * SCROLL_BOOST_FACTOR;
+
+      stateRefs.current.forEach((state, i) => {
+        const targetWithBoost = state.isHovered
+          ? 0
+          : BASE_PX_PER_SECOND * state.baseDirection + scrollBoost * state.baseDirection;
+
+        state.targetSpeed = targetWithBoost;
+        state.currentSpeed += (state.targetSpeed - state.currentSpeed) * EASE_FACTOR;
+        state.positionY += state.currentSpeed * dt;
+
+        if (state.contentHeight > 0) {
+          while (state.positionY <= -state.contentHeight) {
+            state.positionY += state.contentHeight;
+          }
+          while (state.positionY > 0) {
+            state.positionY -= state.contentHeight;
+          }
+        }
+
+        const el = columnRefs.current[i];
+        if (el) {
+          el.style.transform = `translate3d(0, ${state.positionY}px, 0)`;
+        }
+      });
+
+      rafIdRef.current = requestAnimationFrame(frame);
+    }
+
+    rafIdRef.current = requestAnimationFrame(frame);
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
     };
   }, []);
 
-  const duration = isScrolling ? BASE_DURATION_S / SCROLL_BOOST : BASE_DURATION_S;
-
-  // Répartit les artistes en N colonnes (round-robin).
-  const columns: Artist[][] = Array.from({ length: COLS_DESKTOP }, () => []);
-  artists.forEach((a, i) => {
-    columns[i % COLS_DESKTOP].push(a);
-  });
+  const handleEnter = useCallback((colIdx: number) => {
+    if (stateRefs.current[colIdx]) {
+      stateRefs.current[colIdx].isHovered = true;
+    }
+  }, []);
+  const handleLeave = useCallback((colIdx: number) => {
+    if (stateRefs.current[colIdx]) {
+      stateRefs.current[colIdx].isHovered = false;
+    }
+  }, []);
 
   return (
     <>
       <ClipPathDefs />
 
-      <style jsx>{`
-        @keyframes scrollUp {
-          0% { transform: translateY(0); }
-          100% { transform: translateY(-50%); }
-        }
-        @keyframes scrollDown {
-          0% { transform: translateY(-50%); }
-          100% { transform: translateY(0); }
-        }
-      `}</style>
-
-      <div className="relative w-full overflow-hidden" style={{ height: "70vh" }}>
-        {/* Grille des colonnes */}
+      <div
+        ref={containerRef}
+        className="relative w-full overflow-hidden"
+        style={{ height: "70vh" }}
+      >
         <div className="grid h-full grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          {columns.map((colArtists, colIdx) => (
-            <ArtistColumn
-              key={`col-${colArtists[0]?.id ?? colIdx}`}
-              artists={colArtists}
-              direction={colIdx % 2 === 0 ? "up" : "down"}
-              duration={duration}
-            />
-          ))}
+          {columns.map((colArtists, colIdx) => {
+            const doubled = [
+              ...colArtists.map((a) => ({ artist: a, copy: 0 })),
+              ...colArtists.map((a) => ({ artist: a, copy: 1 })),
+            ];
+
+            return (
+              <div
+                key={`col-${colArtists[0]?.id ?? colIdx}`}
+                ref={(el) => {
+                  columnRefs.current[colIdx] = el;
+                }}
+                onPointerEnter={() => handleEnter(colIdx)}
+                onPointerLeave={() => handleLeave(colIdx)}
+                className="flex flex-col gap-6 will-change-transform"
+              >
+                {doubled.map(({ artist, copy }, i) => (
+                  <ArtistTile
+                    key={`${artist.id}-c${copy}`}
+                    artist={artist}
+                    variation={getVariation(i)}
+                  />
+                ))}
+              </div>
+            );
+          })}
         </div>
 
-        {/* Fade haut et bas pour adoucir l'entrée/sortie visuelle */}
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-background to-transparent"
           aria-hidden="true"

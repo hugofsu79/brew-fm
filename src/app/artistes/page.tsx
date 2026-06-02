@@ -1,28 +1,33 @@
-/**
- * Page /artistes — Mur infini d'artistes invités.
- *
- * Server Component : fetch côté serveur (caching Notion 1h),
- * délègue le rendu animé au composant client InfiniteArtistWall.
- *
- * V1 : section "Ont passé chez Brew" (guests uniquement).
- * Les résidents (accordion) viendront dans une 2e itération.
- */
-
-import { InfiniteArtistWall } from "@/components/artists/InfiniteArtistWall";
+import { GuestsSection } from "@/components/artists/GuestsSection";
+import { ResidentsAccordionA } from "@/components/artists/ResidentsAccordionA";
 import { fetchArtists } from "@/lib/notion/artists";
 
 export default async function ArtistesPage() {
   const all = await fetchArtists();
+  const residents = all.filter((a) => a.status === "resident" && a.photoUrl);
   const guests = all.filter((a) => a.status === "guest" && a.photoUrl);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-12">
-      <h1 className="mb-2 text-3xl font-bold tracking-tight sm:text-4xl">Ont passé chez Brew</h1>
-      <p className="mb-10 text-sm text-foreground/60">
-        {guests.length} artistes — survole pour découvrir, clique pour leur passage chez Brew.
-      </p>
+      <h1 className="mb-12 text-4xl font-black tracking-tight uppercase sm:text-5xl">Artistes</h1>
 
-      <InfiniteArtistWall artists={guests} />
+      {/* SECTION RÉSIDENTS */}
+      <section className="mb-16">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">🌟 Résidents</h2>
+          <p className="mt-1 text-sm text-foreground/60">
+            {residents.length} résident{residents.length > 1 ? "s" : ""} — survole pour découvrir
+            leur univers.
+          </p>
+        </div>
+        <ResidentsAccordionA residents={residents} />
+      </section>
+
+      {/* SÉPARATEUR VISUEL */}
+      <hr className="my-16 border-t border-foreground/10" />
+
+      {/* SECTION GUESTS (toggle Mur/Liste) */}
+      <GuestsSection artists={guests} />
     </main>
   );
 }
