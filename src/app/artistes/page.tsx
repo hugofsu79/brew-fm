@@ -1,27 +1,28 @@
 /**
- * Page Résidents / Artistes — /artistes
+ * Page /artistes — Mur infini d'artistes invités.
  *
- * Section Résidents (cartes premium) + section "Ont passé chez Brew" (grille dense).
- * Placeholder structurel pour l'instant.
+ * Server Component : fetch côté serveur (caching Notion 1h),
+ * délègue le rendu animé au composant client InfiniteArtistWall.
+ *
+ * V1 : section "Ont passé chez Brew" (guests uniquement).
+ * Les résidents (accordion) viendront dans une 2e itération.
  */
 
-export default function ArtistesPage() {
+import { InfiniteArtistWall } from "@/components/artists/InfiniteArtistWall";
+import { fetchArtists } from "@/lib/notion/artists";
+
+export default async function ArtistesPage() {
+  const all = await fetchArtists();
+  const guests = all.filter((a) => a.status === "guest" && a.photoUrl);
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
-      <h1 className="text-5xl font-black uppercase tracking-tight sm:text-7xl">Résidents</h1>
-      <p className="mt-4 text-lg text-foreground/60">Les résidents + les artistes qui sont venus</p>
+    <main className="mx-auto max-w-7xl px-4 py-12">
+      <h1 className="mb-2 text-3xl font-bold tracking-tight sm:text-4xl">Ont passé chez Brew</h1>
+      <p className="mb-10 text-sm text-foreground/60">
+        {guests.length} artistes — survole pour découvrir, clique pour leur passage chez Brew.
+      </p>
 
-      <section className="mt-16">
-        <h2 className="text-2xl font-bold uppercase tracking-wide">🌟 Résidents</h2>
-        <p className="mt-4 text-foreground/50">
-          (Cartes premium des résidents — 3 colonnes desktop)
-        </p>
-      </section>
-
-      <section className="mt-16">
-        <h2 className="text-2xl font-bold uppercase tracking-wide">Ont passé chez Brew</h2>
-        <p className="mt-4 text-foreground/50">(Grille dense des invités — 6-8 colonnes desktop)</p>
-      </section>
-    </div>
+      <InfiniteArtistWall artists={guests} />
+    </main>
   );
 }
