@@ -1,9 +1,12 @@
 /**
  * Menu hamburger plein écran (Sheet vert acide).
  *
- * Le bouton hamburger est wrappé dans SheetTrigger pour que Radix gère
- * correctement le cycle ouverture/fermeture (et le retour de focus).
- * Tous les liens et le bouton X utilisent SheetClose pour fermer proprement.
+ * Le bouton hamburger (trigger) n'est PLUS positionné en fixed : il s'insère
+ * naturellement dans le flux du container droit de la navbar (events · Twitch · ☰).
+ * Le panel, lui, s'ouvre en portail plein écran (géré par Radix Sheet).
+ *
+ * Le bouton est wrappé dans SheetTrigger pour que Radix gère le cycle
+ * ouverture/fermeture (et le retour de focus). Liens et bouton X via SheetClose.
  */
 
 "use client";
@@ -26,8 +29,9 @@ const INTERNAL_LINKS_SUBTITLES: Record<string, string> = {
 export function NavbarMenuPanel() {
   return (
     <Sheet>
+      {/* Trigger : bouton dans le flux (plus de fixed) */}
       <SheetTrigger asChild>
-        <NavbarMenuButton className="fixed top-4 left-4 z-50" />
+        <NavbarMenuButton />
       </SheetTrigger>
 
       <SheetContent
