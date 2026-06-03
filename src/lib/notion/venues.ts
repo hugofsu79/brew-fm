@@ -8,7 +8,7 @@
  *   Slug              → slug
  *   Type              → type   (Coffee Shop / Club / Vinyle / Autre)
  *   Format Brew FM    → format (Club in the Coffee shop / Coffee shop in the Club)
- *   Photo du lieu     → coverUrl
+ *   Photo du lieu     → coverUrl  (⚠️ colonne de type URL, pas Files)
  *   Youtube Playlist  → youtubePlaylistUrl
  *   Évènements        → eventIds (relation)
  */
@@ -17,7 +17,6 @@ import { env } from "@/lib/env";
 import type { Venue, VenueFormat, VenueType } from "@/types/domain/venue";
 import { type NotionPage, queryNotionDatabase } from "./client";
 import {
-  extractFirstFileUrl,
   extractRelationIds,
   extractRichText,
   extractSelect,
@@ -49,10 +48,19 @@ function mapVenueFormat(raw?: string): VenueFormat | undefined {
 }
 
 /**
+ * Valide qu'une URL de cover est exploitable (commence par http).
+ * Évite d'injecter des valeurs cassées type "image.png" dans le <img>.
+ */
+function validCoverUrl(url?: string): string | undefined {
+  if (!url) return undefined;
+  return url.startsWith("http") ? url : undefined;
+}
+
+/**
  * Mappe une page Notion brute vers le type Venue du domaine.
  *
  * Note : la colonne titre dans Notion s'appelle historiquement "Venue".
- * On la lit via `props.Venue` ou `props.Nom` (au cas où renommée).
+ * On la lit via `props.Nom` ou `props.Venue` (au cas où renommée).
  */
 function mapNotionVenue(page: NotionPage): Venue {
   const props = page.properties;
@@ -62,7 +70,8 @@ function mapNotionVenue(page: NotionPage): Venue {
     id: page.id,
     slug: extractRichText(props.Slug),
     name,
-    coverUrl: extractFirstFileUrl(props["Photo du lieu"]),
+    // Colonne "Photo du lieu" est de type URL → extractUrl (+ validation http)
+    coverUrl: validCoverUrl(extractUrl(props["Photo du lieu"])),
     type: mapVenueType(extractSelect(props.Type)),
     format: mapVenueFormat(extractSelect(props["Format Brew FM"])),
     youtubePlaylistUrl: extractUrl(props["Youtube Playlist"]),

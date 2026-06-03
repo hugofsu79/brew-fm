@@ -1,21 +1,17 @@
 /**
  * Page Lieux — /lieux
  *
- * Galerie des lieux Brew FM. Au clic, redirection vers la playlist YouTube
- * du lieu. Placeholder structurel pour l'instant.
+ * Server Component : fetch tous les lieux Notion côté serveur (caching natif),
+ * puis délègue l'interactivité (toggle + galerie) à LieuxPageClient.
+ *
+ * Le filtrage par format se fait côté client pour une bascule instantanée.
  */
 
-export default function LieuxPage() {
-  return (
-    <div className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
-      <h1 className="text-5xl font-black uppercase tracking-tight sm:text-7xl">Nos lieux</h1>
-      <p className="mt-4 text-lg text-foreground/60">
-        Là où Brew FM fait vibrer le café et le club
-      </p>
+import { LieuxPageClient } from "@/components/venues/LieuxPageClient";
+import { fetchVenues } from "@/lib/notion/venues";
 
-      <section className="mt-16">
-        <p className="text-foreground/50">(La galerie des lieux s'affichera ici)</p>
-      </section>
-    </div>
-  );
+export default async function LieuxPage() {
+  const venues = await fetchVenues();
+
+  return <LieuxPageClient venues={venues} />;
 }
