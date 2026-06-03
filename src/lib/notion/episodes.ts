@@ -4,7 +4,7 @@
  * Source : base Notion "Émissions".
  *
  * Mapping des colonnes Notion (FR) → champs Episode (EN) :
- *   Nom invité              → number (ex: "Émission #4")
+ *   Nom de l'émission       → number (ex: "Émission #4")
  *   Format                  → format (ex: "Un café avec")
  *   Date émission           → date
  *   Statut                  → status
@@ -12,7 +12,7 @@
  *   Twitch URL              → twitchUrl
  *   Youtube Interview URL   → youtubeInterviewUrl
  *   Youtube DJ Set URL      → youtubeDjSetUrl
- *   Artistes                → guests (relation, résolue par le caller)
+ *   Invités                 → guests (relation, résolue par le caller)
  *
  * Les champs dérivés (displayTitle, thumbnailUrl, isPast) sont calculés.
  * Les guests sont retournés vides au niveau de ce fetcher ;
@@ -41,6 +41,7 @@ function mapEpisodeStatus(raw?: string): EpisodeStatus {
   if (normalized.includes("live")) return "live";
   if (normalized.includes("replay")) return "replay_available";
   if (normalized.includes("archiv")) return "archived";
+  if (normalized.includes("termin")) return "archived";
   return "upcoming";
 }
 
@@ -95,7 +96,8 @@ function mapNotionEpisode(page: NotionPage): EpisodeWithGuestIds {
   const props = page.properties;
 
   const format = extractSelect(props.Format);
-  const number = extractTitle(props["Nom invité"]) ?? "Émission";
+  // Colonne titre Notion : "Nom de l'émission"
+  const number = extractTitle(props["Nom de l'émission"]) ?? "Émission";
   const date = extractDate(props["Date émission"]) ?? "";
 
   const youtubeInterviewUrl = extractUrl(props["Youtube Interview URL"]);
@@ -107,7 +109,7 @@ function mapNotionEpisode(page: NotionPage): EpisodeWithGuestIds {
   const isPast = date ? new Date(date).getTime() < Date.now() : false;
 
   // displayTitle sera complété après la résolution des guests.
-  // En attendant, on met le numéro brut (fallback robuste).
+  // En attendant, on met le format (ou le numéro brut en fallback).
   const displayTitle = format ? `${format}` : number;
 
   return {
@@ -123,7 +125,8 @@ function mapNotionEpisode(page: NotionPage): EpisodeWithGuestIds {
     thumbnailUrl,
     displayTitle,
     isPast,
-    guestIds: extractRelationIds(props.Artistes),
+    // Colonne relation Notion : "Invités"
+    guestIds: extractRelationIds(props.Invités),
   };
 }
 

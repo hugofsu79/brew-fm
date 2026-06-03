@@ -3,36 +3,42 @@
 /**
  * Zone Twitch (droite de la navbar) — desktop uniquement.
  *
- * Trois cas selon le statut résolu côté serveur :
- *   1. kind="live"                  → badge 🔴 LIVE clignotant, click → chaîne
- *   2. kind="upcoming" & ≤ 7 jours  → countdown JJ:HH:MM:SS qui défile
- *   3. kind="upcoming" & > 7 jours  → date simple "DD/MM · HHhMM" (pas de countdown)
+ * Deux cas selon le statut résolu côté serveur :
+ *   1. kind="live"      → badge 🔴 LIVE clignotant, click → chaîne
+ *   2. kind="upcoming"  → logo Twitch + titre + countdown JJ:HH:MM:SS qui défile
  *   (null côté parent → ce composant n'est pas rendu)
+ *
+ * Le countdown s'affiche TOUJOURS pour un live à venir (peu importe la distance).
  *
  * Perf : le countdown vit dans <Countdown/>, son propre composant. Lui seul
  * re-render chaque seconde ; le reste de la navbar reste statique.
  *
- * Responsive : masqué sous le breakpoint `md` (cf. ta spec — mobile ne garde
+ * Responsive : masqué sous le breakpoint `md` (cf. spec — mobile ne garde
  * que [Dropdown] [☰]). La bannière sticky "🔴 LIVE" globale couvre le mobile.
  */
 
 import { useEffect, useState } from "react";
 import type { TwitchStatus } from "@/types/domain/twitch-status";
 
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-
-/** "2026-06-14T21:00:00Z" → "14/06 · 21h00". */
-function formatShortDate(iso: string): string {
-  try {
-    const d = new Date(iso);
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const h = String(d.getHours()).padStart(2, "0");
-    const m = String(d.getMinutes()).padStart(2, "0");
-    return `${day}/${month} · ${h}h${m}`;
-  } catch {
-    return iso;
-  }
+/** Logo Twitch officiel, teinté via currentColor (suit la couleur du texte). */
+function TwitchLogo() {
+  return (
+    <svg
+      width="16"
+      height="19"
+      viewBox="0 0 24 28"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path
+        d="M5 0L0 5V23H6V28L11 23H15L24 14V0H5ZM22 13L18 17H14L10.5 20.5V17H6V2H22V13Z"
+        fill="currentColor"
+      />
+      <path d="M19 5.5H17V11.5H19V5.5Z" fill="currentColor" />
+      <path d="M13.5 5.5H11.5V11.5H13.5V5.5Z" fill="currentColor" />
+    </svg>
+  );
 }
 
 /**
@@ -87,10 +93,7 @@ export function NavbarTwitch({ status }: { status: TwitchStatus }) {
     );
   }
 
-  // Cas 2 & 3 — prochain live
-  const msUntil = new Date(status.startsAt).getTime() - Date.now();
-  const showCountdown = msUntil > 0 && msUntil <= SEVEN_DAYS_MS;
-
+  // Cas 2 — prochain live : logo Twitch + titre + countdown (toujours affiché)
   return (
     <a
       href={status.channelUrl}
@@ -99,10 +102,10 @@ export function NavbarTwitch({ status }: { status: TwitchStatus }) {
       data-source="brewfm-site-banner"
       className="hidden items-center gap-2 rounded-full border border-foreground/15 px-3 py-1.5 text-sm transition-colors hover:border-foreground/40 hover:bg-foreground/5 md:flex"
     >
-      <span aria-hidden="true">🟣</span>
-      <span className="text-foreground/70">{status.title}</span>
+      <TwitchLogo />
+      <span className="text-foreground/70">{status.title}</span>|
       <span className="font-medium">
-        {showCountdown ? <Countdown target={status.startsAt} /> : formatShortDate(status.startsAt)}
+        <Countdown target={status.startsAt} />
       </span>
     </a>
   );
