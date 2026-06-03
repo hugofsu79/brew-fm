@@ -34,7 +34,13 @@ export function GuestsSection({ artists }: { artists: Artist[] }) {
                 : "text-foreground/60 hover:text-foreground"
             }`}
           >
-            <svg width="24" viewBox="0 0 171 208" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg
+              width="24"
+              viewBox="0 0 171 208"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
               <path
                 d="M70.7737 7.84673L7.08603 0.0302866C4.78374 -0.252275 2.72461 1.47635 2.60416 3.79279L0.00539664 53.7708C-0.0128242 54.1212 0.0151422 54.4725 0.0885751 54.8156L8.6911 95.0112C9.132 97.0714 11.0952 98.4363 13.1799 98.1322L74.0655 89.2502C75.8898 88.984 77.2958 87.5056 77.4702 85.6704L81.9838 38.161C82.0323 37.6503 81.9821 37.1351 81.836 36.6434L74.1208 10.6776C73.6675 9.15224 72.3532 8.04058 70.7737 7.84673Z"
                 fill="currentcolor"
