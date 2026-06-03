@@ -19,7 +19,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Event } from "@/types/domain/event";
 
 /** Lien vers la page organisateur Shotgun (à ajuster avec ton slug réel). */
-const SHOTGUN_ORGANIZER_URL = "https://shotgun.live/fr/organizers/brew-fm";
+const _SHOTGUN_ORGANIZER_URL = "https://shotgun.live/fr/organizers/brew-fm";
 
 /** Formate une date ISO → "Sam. 14 juin · 21h00". */
 function formatEventDate(iso: string): string {
@@ -118,7 +118,7 @@ export function NavbarEvents({ events }: { events: Event[] }) {
                 ))}
               </ul>
               <a
-                href={SHOTGUN_ORGANIZER_URL}
+                href="https://shotgun.live/fr/venues/brew"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setOpen(false)}

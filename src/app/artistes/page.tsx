@@ -14,7 +14,7 @@ export default async function ArtistesPage() {
       {/* SECTION RÉSIDENTS */}
       <section className="mb-16">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">🌟 Résidents</h2>
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Résidents</h2>
           <p className="mt-1 text-sm text-foreground/60">
             {residents.length} résident{residents.length > 1 ? "s" : ""} — survole pour découvrir
             leur univers.
