@@ -1,69 +1,44 @@
 /**
  * Statut Twitch pour la navbar.
  *
- * ⚠️ MOCK TEMPORAIRE — l'API Twitch nécessite la création d'une app sur
- * dev.twitch.tv/console, bloquée tant que la 2FA équipe n'est pas activée.
+ * Câblé sur le vrai live Twitch via getCurrentStream() (stream.ts).
  *
- * Quand débloqué :
- *   1. Créer l'app → récupérer TWITCH_CLIENT_ID + TWITCH_CLIENT_SECRET (.env.local)
- *   2. Implémenter le vrai fetch :
- *        - OAuth app token (POST https://id.twitch.tv/oauth2/token)
- *        - GET https://api.twitch.tv/helix/streams?user_login=brew_fm
- *   3. Remplacer UNIQUEMENT le corps de getTwitchStatus() ci-dessous.
- *      → la signature ne change pas, donc ZÉRO modif côté UI (NavbarTwitch).
+ * Comportement actuel :
+ *   - kind="live"  → un stream est EN COURS (data Twitch réelle)
+ *   - null         → pas de live (la zone Twitch ne s'affiche pas)
  *
- * La date "upcoming" doit, elle, venir de Notion Émissions (pas de Twitch).
- * Le câblage Notion → upcoming se fera dans resolve-navbar.tsx.
+ * ⏳ La branche "upcoming" (prochain live programmé) n'est PAS encore câblée.
+ *    Elle viendra de Notion Émissions (fetchUpcomingEpisodes) dans une passe
+ *    dédiée. Tant qu'elle n'est pas branchée, on ne renvoie jamais "upcoming".
+ *
+ * La signature (Promise<TwitchStatus | null>) ne change pas → ZÉRO modif
+ * côté UI (NavbarTwitch).
+ *
+ * Caching : hérité de getCurrentStream() (revalidate 30s côté Next.js).
  */
 
+import { getCurrentStream } from "@/lib/twitch/stream";
 import type { TwitchStatus } from "@/types/domain/twitch-status";
-
-const TWITCH_CHANNEL = "https://twitch.tv/brew_fm";
-
-/**
- * Active/désactive le mock. Passe à `false` pour simuler "rien à venir".
- * À SUPPRIMER une fois le vrai fetch en place.
- */
-const MOCK_ENABLED = true;
-
-/**
- * Bascule le scénario de mock pour tester l'UI :
- *   - "live"     → badge 🔴 clignotant
- *   - "upcoming" → countdown (dans 7j ici → countdown actif)
- *   - "none"     → zone masquée
- */
-const MOCK_SCENARIO: "live" | "upcoming" | "none" = "upcoming";
 
 /**
  * Retourne le statut Twitch courant, ou null si rien à afficher.
  *
- * Caching cible (vrai fetch) : revalidate 30s côté Next.js.
+ * - Si un stream est en cours → kind="live" avec titre + URL chaîne.
+ * - Sinon → null (pas de live, et upcoming pas encore câblé).
  */
 export async function getTwitchStatus(): Promise<TwitchStatus | null> {
-  if (!MOCK_ENABLED) {
-    // TODO: vrai fetch Twitch ici (voir en-tête du fichier)
-    return null;
-  }
+  const stream = await getCurrentStream();
 
-  // --- MOCK ---
-  if (MOCK_SCENARIO === "live") {
+  if (stream) {
     return {
       kind: "live",
-      title: "Émission #12 — DJ set live",
-      channelUrl: TWITCH_CHANNEL,
+      title: stream.title,
+      channelUrl: stream.channelUrl,
     };
   }
 
-  if (MOCK_SCENARIO === "upcoming") {
-    // Prochain live dans 3 jours (→ countdown actif car < 7j)
-    const startsAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
-    return {
-      kind: "upcoming",
-      title: "Émission avec Mathilde",
-      startsAt,
-      channelUrl: TWITCH_CHANNEL,
-    };
-  }
-
+  // Pas de live en cours.
+  // TODO (passe Notion) : si pas de live, interroger fetchUpcomingEpisodes()
+  // pour renvoyer un kind="upcoming" avec startsAt/title réels.
   return null;
 }
