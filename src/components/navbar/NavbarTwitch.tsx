@@ -56,25 +56,32 @@ function TwitchLogo() {
   );
 }
 
-/** Countdown isolé. Re-render chaque seconde. Affiche "JJ HH:MM:SS". */
+/** Countdown isolé. Re-render chaque seconde. Affiche "JJ HH:MM:SS".
+ *  Calcul uniquement après montage (évite le mismatch d'hydratation : le temps
+ *  restant diffère forcément entre le rendu serveur et le rendu client). */
 function Countdown({ target }: { target: string }) {
-  const [remaining, setRemaining] = useState(() =>
-    Math.max(0, new Date(target).getTime() - Date.now()),
-  );
+  // null = pas encore monté → on rend un placeholder stable (identique SSR/client).
+  const [remaining, setRemaining] = useState<number | null>(null);
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setRemaining(Math.max(0, new Date(target).getTime() - Date.now()));
-    }, 1000);
+    const tick = () => setRemaining(Math.max(0, new Date(target).getTime() - Date.now()));
+    tick(); // valeur initiale, côté client uniquement
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [target]);
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  // Avant montage : placeholder neutre (même chaîne côté serveur et client).
+  if (remaining === null) {
+    return <span className="font-mono tabular-nums">--:--:--</span>;
+  }
 
   const totalSec = Math.floor(remaining / 1000);
   const days = Math.floor(totalSec / 86400);
   const hours = Math.floor((totalSec % 86400) / 3600);
   const mins = Math.floor((totalSec % 3600) / 60);
   const secs = totalSec % 60;
-  const pad = (n: number) => String(n).padStart(2, "0");
 
   return (
     <span className="font-mono tabular-nums">
@@ -137,12 +144,22 @@ export function NavbarTwitch({ status }: { status: TwitchStatus }) {
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" sideOffset={8} className="min-w-56">
-        <DropdownMenuItem onSelect={() => handleIcsDownload()}>
+      <DropdownMenuContent
+        align="end"
+        sideOffset={8}
+        className="min-w-56 rounded-none border-none bg-[#A6FF3E] text-[#05180A]"
+      >
+        <DropdownMenuItem
+          onSelect={() => handleIcsDownload()}
+          className="rounded-none focus:bg-[#05180A]/10 focus:text-[#05180A]"
+        >
           <CalendarPlusIcon className="size-4" aria-hidden="true" />
           Apple / Outlook (.ics)
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
+        <DropdownMenuItem
+          asChild
+          className="rounded-none focus:bg-[#05180A]/10 focus:text-[#05180A]"
+        >
           <a href={buildGoogleCalendarUrl(event)} target="_blank" rel="noopener noreferrer">
             Google Agenda
           </a>

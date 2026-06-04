@@ -1,16 +1,17 @@
 /**
- * Page d'accueil Brew FM — player radio plein écran.
+ * Page d'accueil Brew FM — player radio plein écran + recette du mois.
  *
- * Server Component : fetch le now playing (mock), délègue au RadioHero (client)
- * qui occupe strictement la hauteur de l'écran et intègre lui-même le ticker
- * "UP NEXT" en overlay bas. La navbar (overlay fixed) se superpose en haut.
+ * Server Component : fetch le now playing (mock) ET la recette mise en avant,
+ * passe les deux au RadioHero. La recette peut être null (aucune éligible) →
+ * l'onglet "Recette du mois" ne s'affiche alors pas.
  */
 
 import { RadioHero } from "@/components/radio/RadioHero";
+import { getFeaturedRecipe } from "@/lib/notion/recipes";
 import { getNowPlaying } from "@/lib/radio/now-playing";
 
 export default async function HomePage() {
-  const nowPlaying = await getNowPlaying();
+  const [nowPlaying, recipe] = await Promise.all([getNowPlaying(), getFeaturedRecipe()]);
 
-  return <RadioHero data={nowPlaying} />;
+  return <RadioHero data={nowPlaying} recipe={recipe} />;
 }

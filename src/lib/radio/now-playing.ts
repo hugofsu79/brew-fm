@@ -25,10 +25,10 @@ const STREAM_URL = ""; // ex: "https://radio.brewfm.fr/listen/brew/radio.mp3"
 /** Données mock calquées sur la forme AzuraCast réelle. */
 const MOCK_NOW_PLAYING: RadioNowPlaying = {
   current: {
-    artist: "Oneohtrix Point Never",
-    title: "Dim Start",
-    genre: "UK Garage · 2-Step",
-    artUrl: "", // pochette : vide en mock → fallback visuel
+    artist: "Blawan",
+    title: "Fires",
+    genre: "Electronic",
+    artUrl: "https://f4.bcbits.com/img/a3535857343_10.jpg", // pochette : vide en mock → fallback visuel
     durationSec: 222,
     elapsedSec: 84,
   },

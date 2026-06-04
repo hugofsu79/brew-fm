@@ -3,23 +3,18 @@
 /**
  * Dropdown "Nos prochains events" (zone droite de la navbar).
  *
- * Affiche la liste des events Shotgun à venir. Au click sur un item → ouvre la
- * page event Shotgun (nouvel onglet). Lien "Voir tous nos events" en bas →
- * page organisateur Shotgun.
+ * Panel ouvert : fond vert acide, typo vert foncé, SANS border ni border-radius.
+ * (Le bouton trigger garde son style actuel.)
  *
- * Fallback (aucun event à venir) : message "Pas d'event à venir" + lien archives.
+ * Affiche les events Shotgun à venir. Click item → page event Shotgun.
+ * Fallback : "Pas d'event à venir" + lien archives.
  *
- * Client Component car interactif (état ouvert/fermé, fermeture au clic dehors
- * et touche Échap). Reçoit les données déjà résolues côté serveur en props →
- * aucun credential ni fetch ici.
+ * Client Component (état ouvert/fermé, fermeture clic dehors + Échap).
  */
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { Event } from "@/types/domain/event";
-
-/** Lien vers la page organisateur Shotgun (à ajuster avec ton slug réel). */
-const _SHOTGUN_ORGANIZER_URL = "https://shotgun.live/fr/organizers/brew-fm";
 
 /** Formate une date ISO → "Sam. 14 juin · 21h00". */
 function formatEventDate(iso: string): string {
@@ -40,7 +35,6 @@ export function NavbarEvents({ events }: { events: Event[] }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Fermeture au clic en dehors + touche Échap
   useEffect(() => {
     if (!open) return;
 
@@ -94,7 +88,7 @@ export function NavbarEvents({ events }: { events: Event[] }) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-72 overflow-hidden rounded-xl border border-foreground/10 bg-background shadow-xl"
+          className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-72 overflow-hidden bg-[#A6FF3E] text-[#05180A]"
         >
           {hasEvents ? (
             <>
@@ -107,10 +101,12 @@ export function NavbarEvents({ events }: { events: Event[] }) {
                       rel="noopener noreferrer"
                       role="menuitem"
                       onClick={() => setOpen(false)}
-                      className="block px-4 py-2.5 transition-colors hover:bg-foreground/5"
+                      className="block px-4 py-2.5 transition-colors hover:bg-[#05180A]/10"
                     >
-                      <span className="block text-sm font-medium leading-snug">{event.name}</span>
-                      <span className="mt-0.5 block text-xs text-foreground/60">
+                      <span className="block text-sm font-semibold uppercase leading-snug">
+                        {event.name}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-[#05180A]/70">
                         {formatEventDate(event.startTime)}
                       </span>
                     </a>
@@ -122,18 +118,18 @@ export function NavbarEvents({ events }: { events: Event[] }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setOpen(false)}
-                className="block border-t border-foreground/10 px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+                className="block border-t border-[#05180A]/15 px-4 py-2.5 text-center text-xs font-bold uppercase tracking-wide transition-colors hover:bg-[#05180A]/10"
               >
                 Voir tous nos events →
               </a>
             </>
           ) : (
             <div className="px-4 py-5 text-center">
-              <p className="text-sm text-foreground/60">Pas d&apos;event à venir</p>
+              <p className="text-sm text-[#05180A]/70">Pas d&apos;event à venir</p>
               <Link
                 href="/events"
                 onClick={() => setOpen(false)}
-                className="mt-1 inline-block text-xs font-semibold uppercase tracking-wide text-foreground/80 underline-offset-2 hover:underline"
+                className="mt-1 inline-block text-xs font-bold uppercase tracking-wide underline-offset-2 hover:underline"
               >
                 Voir les archives →
               </Link>
