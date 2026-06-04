@@ -4,23 +4,38 @@
  * Zone Twitch (droite de la navbar) — desktop uniquement.
  *
  * Deux cas selon le statut résolu côté serveur :
- *   1. kind="live"      → badge 🔴 LIVE clignotant, click → chaîne
- *   2. kind="upcoming"  → logo Twitch + titre + countdown JJ:HH:MM:SS qui défile
- *   (null côté parent → ce composant n'est pas rendu)
+ *   1. kind="live"      → badge 🔴 LIVE clignotant, click → chaîne Twitch (regarder)
+ *   2. kind="upcoming"  → logo + titre + countdown, click → menu "Ajouter au calendrier"
+ *                         (Apple/Outlook .ics + Google Agenda)
  *
- * Le countdown s'affiche TOUJOURS pour un live à venir (peu importe la distance).
+ * Le countdown s'affiche toujours pour un live à venir.
  *
  * Perf : le countdown vit dans <Countdown/>, son propre composant. Lui seul
- * re-render chaque seconde ; le reste de la navbar reste statique.
+ * re-render chaque seconde.
  *
- * Responsive : masqué sous le breakpoint `md` (cf. spec — mobile ne garde
- * que [Dropdown] [☰]). La bannière sticky "🔴 LIVE" globale couvre le mobile.
+ * Responsive : masqué sous `md`. Durée d'événement par défaut : 120 min.
  */
 
+import { CalendarPlusIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  buildGoogleCalendarUrl,
+  buildIcs,
+  type CalendarEvent,
+  downloadIcs,
+} from "@/lib/calendar/ics";
 import type { TwitchStatus } from "@/types/domain/twitch-status";
 
-/** Logo Twitch officiel, teinté via currentColor (suit la couleur du texte). */
+/** Durée par défaut d'une émission (min) pour l'événement calendrier. */
+const DEFAULT_DURATION_MIN = 120;
+
+/** Logo Twitch officiel, teinté via currentColor. */
 function TwitchLogo() {
   return (
     <svg
@@ -41,10 +56,7 @@ function TwitchLogo() {
   );
 }
 
-/**
- * Countdown isolé. Re-render chaque seconde sans toucher au reste de la navbar.
- * Affiche "JJ HH:MM:SS" (jours omis si 0).
- */
+/** Countdown isolé. Re-render chaque seconde. Affiche "JJ HH:MM:SS". */
 function Countdown({ target }: { target: string }) {
   const [remaining, setRemaining] = useState(() =>
     Math.max(0, new Date(target).getTime() - Date.now()),
@@ -73,7 +85,7 @@ function Countdown({ target }: { target: string }) {
 }
 
 export function NavbarTwitch({ status }: { status: TwitchStatus }) {
-  // Cas 1 — live en cours
+  // Cas 1 — live en cours → lien direct vers la chaîne
   if (status.kind === "live") {
     return (
       <a
@@ -93,20 +105,49 @@ export function NavbarTwitch({ status }: { status: TwitchStatus }) {
     );
   }
 
-  // Cas 2 — prochain live : logo Twitch + titre + countdown (toujours affiché)
+  // Cas 2 — prochain live → CTA "Ajouter au calendrier"
+  const start = new Date(status.startsAt);
+  const end = new Date(start.getTime() + DEFAULT_DURATION_MIN * 60 * 1000);
+  const event: CalendarEvent = {
+    title: `Brew FM — ${status.title}`,
+    start,
+    end,
+    description: `Live Brew FM : ${status.title}. Rendez-vous sur ${status.channelUrl}`,
+    url: status.channelUrl,
+  };
+
+  function handleIcsDownload() {
+    downloadIcs("brew-fm-live.ics", buildIcs(event));
+  }
+
   return (
-    <a
-      href={status.channelUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      data-source="brewfm-site-banner"
-      className="hidden items-center gap-2 rounded-full border border-foreground/15 px-3 py-1.5 text-sm transition-colors hover:border-foreground/40 hover:bg-foreground/5 md:flex"
-    >
-      <TwitchLogo />
-      <span className="text-foreground/70">{status.title}</span>|
-      <span className="font-medium">
-        <Countdown target={status.startsAt} />
-      </span>
-    </a>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          data-source="brewfm-site-banner"
+          className="hidden items-center gap-2 rounded-full border border-foreground/15 px-3 py-1.5 text-sm transition-colors hover:border-foreground/40 hover:bg-foreground/5 md:flex"
+        >
+          <TwitchLogo />
+          <span className="text-foreground/70">{status.title}</span>
+          <span className="font-medium">
+            <Countdown target={status.startsAt} />
+          </span>
+          <CalendarPlusIcon className="size-4 text-foreground/50" aria-hidden="true" />
+        </button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" sideOffset={8} className="min-w-56">
+        <DropdownMenuItem onSelect={() => handleIcsDownload()}>
+          <CalendarPlusIcon className="size-4" aria-hidden="true" />
+          Apple / Outlook (.ics)
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <a href={buildGoogleCalendarUrl(event)} target="_blank" rel="noopener noreferrer">
+            Google Agenda
+          </a>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
