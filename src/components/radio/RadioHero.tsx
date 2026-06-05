@@ -72,6 +72,26 @@ function fmt(totalSec: number): string {
 }
 
 /**
+ * RevealUp — apparition fluide bottom→top, cropée.
+ * Le contenu monte depuis sous une ligne de coupe (overflow-hidden) avec un
+ * bezier doux (easeOutExpo). Utilisé pour titre / sous-titre / genre.
+ */
+function RevealUp({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  return (
+    <span className="block overflow-hidden pb-[0.12em]">
+      <motion.span
+        className="block"
+        initial={{ y: "110%" }}
+        animate={{ y: "0%" }}
+        transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1], delay }}
+      >
+        {children}
+      </motion.span>
+    </span>
+  );
+}
+
+/**
  * Waveform style SoundCloud (générée, stable).
  *   - barres écoulées : vert acide / restantes : vert foncé
  *   - hauteurs pseudo-aléatoires déterministes (stables entre les rendus)
@@ -169,14 +189,18 @@ export function RadioHero({ data, recipe }: { data: RadioNowPlaying; recipe: Rec
       {/* Titre énorme (artiste) + sous-titre (morceau), sous la navbar */}
       <div className="relative z-10 px-6 pt-24 sm:px-10 sm:pt-28">
         <h1 className="max-w-5xl text-5xl font-black uppercase leading-[1.1] tracking-tighter sm:text-7xl md:text-8xl">
-          <span className="box-decoration-clone bg-[#A6FF3E] px-2 text-[#05180A]">
-            {current.artist}
-          </span>
+          <RevealUp delay={0.05}>
+            <span className="box-decoration-clone bg-[#A6FF3E] px-2 text-[#05180A]">
+              {current.artist}
+            </span>
+          </RevealUp>
         </h1>
         <p className="mt-3 text-xl font-medium uppercase tracking-wide sm:text-2xl">
-          <span className="box-decoration-clone bg-[#A6FF3E] px-1.5 text-[#05180A]">
-            {current.title}
-          </span>
+          <RevealUp delay={0.18}>
+            <span className="box-decoration-clone bg-[#A6FF3E] px-1.5 text-[#05180A]">
+              {current.title}
+            </span>
+          </RevealUp>
         </p>
       </div>
 
@@ -198,14 +222,18 @@ export function RadioHero({ data, recipe }: { data: RadioNowPlaying; recipe: Rec
       {current.genre && (
         <div className="absolute bottom-16 left-6 z-10 sm:left-10">
           <p className="mb-1 text-xs font-bold uppercase tracking-widest">
-            <span className="box-decoration-clone bg-[#A6FF3E] px-1.5 py-0.5 text-[#05180A]">
-              Genre
-            </span>
+            <RevealUp delay={0.3}>
+              <span className="box-decoration-clone bg-[#A6FF3E] px-1.5 py-0.5 text-[#05180A]">
+                Genre
+              </span>
+            </RevealUp>
           </p>
           <p className="text-lg font-medium uppercase tracking-wide">
-            <span className="box-decoration-clone bg-[#A6FF3E] px-1.5 py-0.5 text-[#05180A]">
-              {current.genre}
-            </span>
+            <RevealUp delay={0.38}>
+              <span className="box-decoration-clone bg-[#A6FF3E] px-1.5 py-0.5 text-[#05180A]">
+                {current.genre}
+              </span>
+            </RevealUp>
           </p>
         </div>
       )}

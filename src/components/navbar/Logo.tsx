@@ -34,10 +34,6 @@ export function Logo() {
           fill="currentColor"
         />
       </svg>
-
-      <span className="text-lg font-bold tracking-tight">
-        Brew<span className="opacity-60">FM</span>
-      </span>
     </Link>
   );
 }

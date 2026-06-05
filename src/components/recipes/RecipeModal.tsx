@@ -20,10 +20,10 @@
  */
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Recipe } from "@/types/domain/recipe";
 
-const PEEK_REVEAL = 36; // px visibles au repos
+const PEEK_REVEAL = 30; // px visibles au repos
 const HOVER_EXTRA = 90; // px révélés en plus au hover
 const PEEK_MAX_VH = 22; // hauteur visible au repos (vh)
 const HOVER_MAX_VH = 34;
@@ -76,7 +76,9 @@ function TicketBody({ recipe }: { recipe: Recipe }) {
 
       {/* Titre surligné vert acide */}
       <h2 className="text-center text-lg font-bold uppercase leading-tight">
-        <span className="box-decoration-clone bg-[#A6FF3E] px-1 text-[#05180A]">{recipe.title}</span>
+        <span className="box-decoration-clone bg-[#A6FF3E] px-1 text-[#05180A]">
+          {recipe.title}
+        </span>
       </h2>
       {(recipe.drinkBase || recipe.drinkType) && (
         <p className="mt-2 text-center text-[11px] uppercase tracking-wide text-black/60">
@@ -90,7 +92,9 @@ function TicketBody({ recipe }: { recipe: Recipe }) {
       <div className="space-y-1 text-[12px]">
         {recipe.difficulty && <Row label="Difficulté" value={recipe.difficulty} />}
         {recipe.temperature && <Row label="Température" value={recipe.temperature} />}
-        {recipe.prepTimeMin != null && <Row label="Préparation" value={`${recipe.prepTimeMin} min`} />}
+        {recipe.prepTimeMin != null && (
+          <Row label="Préparation" value={`${recipe.prepTimeMin} min`} />
+        )}
         {recipe.finalVolume && <Row label="Volume" value={recipe.finalVolume} />}
       </div>
 
@@ -125,11 +129,16 @@ function TicketBody({ recipe }: { recipe: Recipe }) {
         Merci · Sip, listen, dance
       </p>
 
-      {/* Image en bas, N&B normal (sans bitmap ni contraste) */}
+      {/* Image en bas, fusionnée au ticket via multiply (le fond clair du
+          bitmap disparaît, seul le dessin sombre reste sur le papier crème) */}
       {recipe.photoUrl && (
         <div className="mt-4 overflow-hidden">
           {/* biome-ignore lint/performance/noImgElement: image externe (Notion) */}
-          <img src={recipe.photoUrl} alt={recipe.title} className="w-full object-cover grayscale" />
+          <img
+            src={recipe.photoUrl}
+            alt={recipe.title}
+            className="w-full object-cover mix-blend-multiply"
+          />
         </div>
       )}
     </div>
@@ -145,6 +154,13 @@ export function RecipeModal({ recipe }: { recipe: Recipe }) {
   );
   // Désactive l'animation au tout premier rendu (placement direct).
   const [ready, setReady] = useState(false);
+  const ticketRef = useRef<HTMLDivElement | null>(null);
+
+  /** Ferme + remet le scroll du ticket en haut (revient au niveau du titre). */
+  function closeTicket() {
+    if (ticketRef.current) ticketRef.current.scrollTop = 0;
+    setOpen(false);
+  }
 
   // Recalcule au resize.
   useEffect(() => {
@@ -165,7 +181,7 @@ export function RecipeModal({ recipe }: { recipe: Recipe }) {
     };
   }, [open]);
 
-  const state = open ? "open" : hovered ? "hover" : "peek";
+  const state = !ready ? "peek" : open ? "open" : hovered ? "hover" : "peek";
 
   const variants = {
     peek: { rotate: ROTATION, x: peekX, y: 0, maxHeight: `${PEEK_MAX_VH}vh` },
@@ -185,7 +201,7 @@ export function RecipeModal({ recipe }: { recipe: Recipe }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setOpen(false)}
+            onClick={closeTicket}
           />
         )}
       </AnimatePresence>
@@ -193,6 +209,7 @@ export function RecipeModal({ recipe }: { recipe: Recipe }) {
       {/* Wrapper centré ; le ticket s'anime à l'intérieur */}
       <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
         <motion.div
+          ref={ticketRef}
           animate={state}
           variants={variants}
           transition={ready ? SPRING : { duration: 0 }}
@@ -218,7 +235,7 @@ export function RecipeModal({ recipe }: { recipe: Recipe }) {
             <button
               type="button"
               aria-label="Fermer"
-              onClick={() => setOpen(false)}
+              onClick={closeTicket}
               className="absolute right-3 top-3 z-10 text-black/40 transition-colors hover:text-black"
             >
               ✕
