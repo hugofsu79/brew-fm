@@ -19,8 +19,7 @@ import type { RadioNowPlaying } from "@/types/domain/radio";
 /** Active/désactive le mock. Passe à false quand AzuraCast est branché. */
 const MOCK_ENABLED = true;
 
-/** URL du flux audio (vide en mock → bouton play inactif tant qu'AzuraCast absent). */
-const STREAM_URL = ""; // ex: "https://radio.brewfm.fr/listen/brew/radio.mp3"
+const STREAM_URL = "/demo.mp3";
 
 /** Données mock calquées sur la forme AzuraCast réelle. */
 const MOCK_NOW_PLAYING: RadioNowPlaying = {

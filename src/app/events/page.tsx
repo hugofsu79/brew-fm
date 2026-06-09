@@ -11,7 +11,7 @@
  * Server Component (async) : le fetch se fait côté serveur, caching Next.js natif.
  */
 
-import { EventCard } from "@/components/cards/EventCard";
+import EventCard from "@/components/cards/EventCard";
 import { fetchShotgunEvents } from "@/lib/shotgun/client";
 import { mapShotgunEvents } from "@/lib/shotgun/mapper";
 import type { Event } from "@/types/domain/event";

@@ -64,7 +64,7 @@ export function NavbarEvents({ events }: { events: Event[] }) {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="flex items-center gap-1.5 rounded-full border border-foreground/15 px-3 py-1.5 text-sm font-medium transition-colors hover:border-foreground/40 hover:bg-foreground/5"
+        className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-opacity hover:opacity-80 bg-[var(--color-brew-acid)] text-[var(--color-brew-black)]"
       >
         <span>Nos prochains events</span>
         <svg

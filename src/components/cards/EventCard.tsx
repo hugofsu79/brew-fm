@@ -1,32 +1,29 @@
 /**
- * EventCard — tuile représentant un événement Brew FM.
+ * EventCard — tuile événement Brew FM.
  *
- * Brique réutilisable affichée en grille sur la page /events (à venir + archives).
- * Au click → ouvre la page Shotgun de l'event (nouvel onglet).
+ * Direction : brutaliste éditorial, inspiré Motion.js / Awwwards.
+ *   - Zéro border-radius (angles droits partout)
+ *   - Image plein cadre avec overlay texte en bas (pas de section "infos" séparée)
+ *   - Hover : image zoom + ligne acide qui sweep de gauche à droite sous le titre
+ *   - Badge type de lieu : typographie pure, uppercase, pas de pill
+ *   - Titre en font-black large, date + lieu en petit tracking large
+ *   - Ratio carré (1/1) — plus éditorial que 4/3
  *
- * Affiche : image de couverture, badge type de lieu (☕ coffee shop / 🎉 club…),
- * titre, date formatée, nom du lieu.
- *
- * Données : type `Event` (source Shotgun + enrichissement Notion).
- * Aucune dépendance aux artistes/relations Notion → utilisable dès maintenant.
- *
- * Server Component (pas d'interactivité JS) — un simple <a>.
+ * Server Component — un simple <a>.
  */
 
 import type { Event, EventTypeOfPlace } from "@/types/domain/event";
 
-/** Mapping type de lieu → badge (emoji + label). Tout sauf coffee_shop = 🎉. */
-const PLACE_BADGE: Record<EventTypeOfPlace, { emoji: string; label: string }> = {
-  coffee_shop: { emoji: "☕", label: "Coffee shop" },
-  club: { emoji: "🎉", label: "Club" },
-  concert: { emoji: "🎉", label: "Concert" },
-  festival: { emoji: "🎉", label: "Festival" },
-  warehouse: { emoji: "🎉", label: "Warehouse" },
-  open_air: { emoji: "🎉", label: "Open air" },
-  other: { emoji: "🎉", label: "Event" },
+const PLACE_BADGE: Record<EventTypeOfPlace, { label: string }> = {
+  coffee_shop: { label: "Coffee shop" },
+  club: { label: "Club" },
+  concert: { label: "Concert" },
+  festival: { label: "Festival" },
+  warehouse: { label: "Warehouse" },
+  open_air: { label: "Open air" },
+  other: { label: "Event" },
 };
 
-/** Formate une date ISO → "Sam. 14 juin 2026". */
 function formatEventDate(iso: string): string {
   try {
     return new Intl.DateTimeFormat("fr-FR", {
@@ -40,12 +37,11 @@ function formatEventDate(iso: string): string {
   }
 }
 
-/** Résout le nom du lieu : priorité au lieu Notion enrichi, sinon nom Shotgun brut. */
 function resolveVenueName(event: Event): string | null {
   return event.brewVenue?.name ?? event.shotgunVenueName ?? null;
 }
 
-export function EventCard({ event }: { event: Event }) {
+export default function EventCard({ event }: { event: Event }) {
   const badge = PLACE_BADGE[event.typeOfPlace];
   const venueName = resolveVenueName(event);
 
@@ -54,41 +50,79 @@ export function EventCard({ event }: { event: Event }) {
       href={event.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group block overflow-hidden rounded-xl border border-foreground/10 bg-background transition-colors hover:border-foreground/30"
+      className="group relative block overflow-hidden bg-foreground/5"
     >
-      {/* Image de couverture */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-foreground/5">
+      {/* ── Image plein cadre ── */}
+      <div className="relative aspect-square overflow-hidden">
         {event.coverUrl ? (
-          // biome-ignore lint/performance/noImgElement: image externe Shotgun, next/image optionnel en V1
+          // biome-ignore lint/performance/noImgElement: image externe Shotgun
           <img
             src={event.coverUrl}
             alt={event.name}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-foreground/30">
-            <span className="text-3xl">{badge.emoji}</span>
+          /* Fallback : fond texturé avec initiale */
+          <div
+            className="flex h-full w-full items-center justify-center"
+            style={{ backgroundColor: "var(--color-brew-black)" }}
+          >
+            <span
+              className="text-[8rem] font-black uppercase leading-none opacity-10"
+              style={{ color: "var(--color-brew-acid)" }}
+            >
+              {event.name.charAt(0)}
+            </span>
           </div>
         )}
 
-        {/* Badge type de lieu */}
-        <span className="absolute left-3 top-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium backdrop-blur-sm">
-          {badge.emoji} {badge.label}
-        </span>
+        {/* Voile dégradé bas → haut pour lisibilité du texte */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-        {/* Badge annulé (si applicable) */}
+        {/* Badge annulé */}
         {event.isCancelled && (
-          <span className="absolute right-3 top-3 rounded-full bg-red-600/90 px-2.5 py-1 text-xs font-semibold text-white">
-            Annulé
-          </span>
+          <div className="absolute right-0 top-0 bg-red-600 px-2.5 py-1">
+            <span className="text-[10px] font-black uppercase tracking-widest text-white">
+              Annulé
+            </span>
+          </div>
         )}
-      </div>
 
-      {/* Infos */}
-      <div className="p-4">
-        <h3 className="line-clamp-2 text-base font-semibold leading-snug">{event.name}</h3>
-        <p className="mt-2 text-sm text-foreground/60">{formatEventDate(event.startTime)}</p>
-        {venueName && <p className="mt-0.5 truncate text-sm text-foreground/60">{venueName}</p>}
+        {/* ── Infos superposées en bas ── */}
+        <div className="absolute inset-x-0 bottom-0 p-4">
+          {/* Badge type de lieu — typographie pure, sans pill */}
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
+            {badge.label}
+          </p>
+
+          {/* Titre + ligne sweep acide */}
+          <div className="relative">
+            <h3 className="text-xl font-black uppercase leading-tight tracking-tight text-white sm:text-2xl">
+              {event.name}
+            </h3>
+            {/* Ligne acide — sweep gauche→droite au hover */}
+            <span
+              className="absolute -bottom-1 left-0 h-[2px] w-full origin-left scale-x-0 transition-transform duration-500 ease-out group-hover:scale-x-100"
+              style={{ backgroundColor: "var(--color-brew-acid)" }}
+              aria-hidden="true"
+            />
+          </div>
+
+          {/* Date + lieu */}
+          <div className="mt-3 flex items-center gap-3">
+            <p className="text-[11px] font-medium uppercase tracking-widest text-white/60">
+              {formatEventDate(event.startTime)}
+            </p>
+            {venueName && (
+              <>
+                <span className="h-px w-3 bg-white/30" aria-hidden="true" />
+                <p className="truncate text-[11px] font-medium uppercase tracking-widest text-white/60">
+                  {venueName}
+                </p>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </a>
   );

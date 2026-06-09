@@ -42,7 +42,7 @@ export type EventArtist = {
 export type Event = {
   // Identifiants
   id: number; // Shotgun Event ID (clé pivot)
-  notionEnrichmentId?: string; // ID page Notion EE si enrichi
+  notionEnrichmentId?: string; // >ID page Notion EE si enrichi
 
   // Données Shotgun
   name: string;

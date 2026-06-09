@@ -1,228 +1,277 @@
 "use client";
 
 /**
- * AboutContent — Page About du collectif Brew FM (style brutaliste).
+ * AboutContent — Page About Brew FM.
  *
- * ⚠️ CONTENU PLACEHOLDER : tous les textes marqués [À REMPLIR] sont à remplacer
- * par le vrai contenu de Hugo. La STRUCTURE et les ANIMATIONS sont définitives.
+ * 3 sections :
+ *   1. HERO      — titre display + texte, typographie seule, respirant
+ *   2. LA TEAM   — section sticky plein écran, image background, titre
+ *                  "LA TEAM" qui glisse de gauche vers sa position au scroll
+ *                  (useScroll + useTransform Motion, équivalent GSAP ScrollTrigger)
+ *   3. TROMBI    — grille portraits, zéro border-radius, hover opacity
  *
- * Structure : 4 sections thématiques alternées
- *   1. ORIGINE  — l'histoire, comment c'est né
- *   2. CONCEPT  — "Club in the Coffee shop / Coffee shop in the Club"
- *   3. ÉQUIPE   — les membres du collectif
- *   4. VISION   — où on va
- *
- * DA brutaliste : bordures épaisses, blocs décalés, gros titres débordants,
- * grain de café récurrent, vert acide en accent. Animations via Motion
- * (reveal au scroll avec whileInView + stagger).
- *
- * Images/gifs : placeholders <div> avec ratio — remplace les src par tes médias.
+ * ⚠️ Remplace les placeholders src="" et les noms/rôles par tes vraies données.
  */
 
-import { motion } from "motion/react";
+import { motion, useScroll, useTransform } from "motion/react";
+import { useRef } from "react";
 
-/** Grain de café décoratif (vert Brew Acid). */
-function CoffeeBean({ className = "" }: { className?: string }) {
+// ─── Data placeholders ────────────────────────────────────────────────────────
+
+const TEAM_MEMBERS = [
+  { name: "Louis",    role: "Co-fondateur · DJ Résident",  src: "" },
+  { name: "Estelle",  role: "Co-fondatrice · DJ Résidente", src: "" },
+  { name: "SERVYE",   role: "DJ Résident",                  src: "" },
+  { name: "SØLE V",   role: "DJ Résident",                  src: "" },
+  { name: "OZZMAN",   role: "DJ Résident",                  src: "" },
+];
+
+// ─── Easing ───────────────────────────────────────────────────────────────────
+
+const EASE_OUT = [0.22, 1, 0.36, 1] as const;
+
+// ─── Section 1 — Hero ────────────────────────────────────────────────────────
+
+function SectionHero() {
   return (
-    <svg
-      width="1em"
-      height="1em"
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-      className={className}
-    >
-      <path
-        d="M4.125 4.125C9.53255 -1.28255 19.2044 -0.594454 25.6924 5.89355C32.1801 12.3816 32.8674 22.0525 27.46 27.46C22.0525 32.8674 12.3816 32.1801 5.89355 25.6924C-0.594454 19.2044 -1.28255 9.53255 4.125 4.125ZM25.3174 6.26758C19.1472 0.0975223 9.79948 -0.815105 4.49121 4.49316L4.48438 4.5C3.98278 5.00333 3.64454 5.66225 3.55957 6.38184H3.55859C3.49508 6.92633 3.5074 7.48592 3.59668 8.05176C3.78452 9.24086 4.31417 10.4152 5.08789 11.3662H5.08887C5.1714 11.4673 5.16489 11.6202 5.06836 11.7168C5.06328 11.7219 5.05527 11.729 5.04297 11.7393C4.95636 11.8079 4.80961 11.8096 4.70508 11.7236L4.66309 11.6816C4.3675 11.3161 4.0593 10.7058 3.78516 10.0527C3.29877 8.89417 1.62221 9.06563 1.34863 10.2734C0.232905 15.2075 1.96609 21.0169 6.26758 25.3184C12.4377 31.4882 21.7846 32.401 27.0928 27.0928C27.3625 26.8231 27.4502 26.47 27.4639 26.1553C27.4776 25.8394 27.4206 25.504 27.3418 25.1934C27.1847 24.5741 26.9061 23.9292 26.75 23.5439C26.3877 22.6496 25.9177 21.802 25.3545 21.0244H25.3535C25.2617 20.8961 25.3035 20.7022 25.4688 20.626H25.4697C25.5687 20.5802 25.7088 20.6112 25.7871 20.7197C26.3717 21.5286 26.8593 22.4098 27.2363 23.3389L27.2383 23.3418L27.2432 23.3535V23.3545C27.6676 24.4051 29.149 24.3992 29.582 23.3623C31.796 18.0649 30.2283 11.1785 25.3174 6.26758Z"
-        fill="#A6FF3E"
-        stroke="#A6FF3E"
+    <section className="mx-auto max-w-5xl px-6 pb-40 pt-32 sm:px-12 sm:pt-40">
+      <motion.div
+        initial={{ opacity: 0, y: 30, clipPath: "inset(0 0 100% 0)" }}
+        animate={{ opacity: 1, y: 0, clipPath: "inset(0 0 0% 0)" }}
+        transition={{ duration: 0.9, ease: EASE_OUT }}
+      >
+        <h1 className="mb-12 text-6xl font-black uppercase leading-[0.9] tracking-tighter sm:text-8xl lg:text-9xl">
+          Brew
+          <br />
+          <span style={{ color: "var(--color-brew-acid)" }}>FM</span>
+        </h1>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.3, ease: EASE_OUT }}
+        className="grid gap-10 md:grid-cols-2"
+      >
+        {/* Colonne gauche : phrase accroche */}
+        <div>
+          <p className="text-2xl font-black uppercase leading-tight tracking-tight sm:text-3xl">
+            Club in the Coffee shop.
+            <br />
+            <span className="text-foreground/40">Coffee shop in the Club.</span>
+          </p>
+        </div>
+
+        {/* Colonne droite : texte corpo */}
+        <div className="space-y-4 text-base leading-relaxed text-foreground/60 sm:text-lg">
+          <p>
+            Brew FM est un collectif musical parisien né de l&apos;envie de briser les frontières
+            entre deux mondes : le café de spécialité et la musique électronique.
+          </p>
+          <p>
+            On organise des événements là où on ne nous attend pas — dans les coffee shops de
+            quartier comme dans les clubs — pour créer des moments hybrides, intimes et dansants.
+          </p>
+          <p>
+            UK Garage, Drum &amp; Bass, Jungle. Du son, du café, de l&apos;énergie.
+          </p>
+        </div>
+      </motion.div>
+
+      {/* Ligne séparatrice */}
+      <motion.div
+        className="mt-24 h-px w-full bg-foreground/10"
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: 1 }}
+        transition={{ duration: 1.2, delay: 0.6, ease: EASE_OUT }}
+        style={{ transformOrigin: "left" }}
       />
-    </svg>
+    </section>
   );
 }
 
-/** Placeholder média : bloc avec ratio + label. Remplace par <img>/<video>. */
-function MediaPlaceholder({ label, ratio = "4/3" }: { label: string; ratio?: string }) {
+// ─── Section 2 — La Team (sticky scroll) ─────────────────────────────────────
+
+/**
+ * Effet scroll GSAP-style avec Motion :
+ *   - Le container parent a une hauteur de 200vh → crée du scroll "interne"
+ *   - useScroll({ target }) traque la progression de ce container
+ *   - useTransform mappe [0, 1] → [translateX(-60vw), translateX(0)]
+ *   - Résultat : le titre glisse de gauche vers sa position finale au scroll
+ */
+function SectionTeam() {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"],
+  });
+
+  // Titre : entre de la gauche et se pose sur sa position finale
+  const titleX = useTransform(scrollYProgress, [0, 0.5], ["-55vw", "0vw"]);
+  const titleOpacity = useTransform(scrollYProgress, [0, 0.25], [0, 1]);
+
+  // Sous-titre : fade in léger décalé
+  const subtitleOpacity = useTransform(scrollYProgress, [0.2, 0.5], [0, 1]);
+  const subtitleY = useTransform(scrollYProgress, [0.2, 0.5], [20, 0]);
+
+  // Parallaxe : l'image se déplace plus lentement que le scroll
+  // → crée une impression de profondeur (effet classique)
+  const imageY = useTransform(scrollYProgress, [0, 1], ["-15%", "15%"]);
+
   return (
-    <div
-      className="relative grid place-items-center border-4 border-foreground bg-foreground/5"
-      style={{ aspectRatio: ratio }}
-    >
-      <span className="px-4 text-center text-xs font-bold uppercase tracking-widest text-foreground/40">
-        [MÉDIA] {label}
-      </span>
-      {/* Coin accent brutaliste */}
-      <span className="absolute -right-2 -top-2 h-5 w-5 bg-[#A6FF3E]" />
+    // Hauteur 200vh = zone de scroll pour l'animation
+    <div ref={containerRef} className="relative h-[200vh]">
+      {/* Sticky : reste fixé pendant tout le scroll du container */}
+      <div className="sticky top-0 h-screen overflow-hidden">
+        {/* Image background plein écran avec parallaxe */}
+        <div className="absolute inset-0">
+          {/* Fallback fond sombre — EN DESSOUS de l'image (z-index bas) */}
+          <div
+            className="absolute inset-0 -z-10"
+            style={{ backgroundColor: "var(--color-brew-black)" }}
+          />
+          {/* Conteneur élargi verticalement pour le parallaxe */}
+          <motion.div
+            style={{ y: imageY }}
+            className="absolute inset-x-0 -bottom-[15%] -top-[15%]"
+          >
+            {/* biome-ignore lint/performance/noImgElement: image statique locale */}
+            <img
+              src="/images/team.jpg"
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full object-cover"
+            />
+          </motion.div>
+          {/* Voile sombre au-dessus de l'image pour lisibilité du texte */}
+          <div className="absolute inset-0 bg-black/50" />
+        </div>
+
+        {/* Contenu superposé */}
+        <div className="relative flex h-full flex-col justify-between p-8 sm:p-14">
+          {/* Titre animé — coin haut gauche */}
+          <div className="overflow-hidden">
+            <motion.h2
+              style={{ x: titleX, opacity: titleOpacity }}
+              className="text-[clamp(3rem,10vw,8rem)] font-black uppercase leading-none tracking-tighter text-white"
+            >
+              La Team
+            </motion.h2>
+          </div>
+
+          {/* Bas : tagline */}
+          <motion.p
+            style={{ opacity: subtitleOpacity, y: subtitleY }}
+            className="max-w-sm text-sm font-medium uppercase tracking-widest text-white/50"
+          >
+            Le collectif derrière Brew FM — résidents, co-fondateurs, passionnés.
+          </motion.p>
+        </div>
+      </div>
     </div>
   );
 }
 
-/** Variantes d'animation reveal au scroll. */
-const fadeUp = {
-  hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0 },
-};
+// ─── Section 3 — Trombinoscope ────────────────────────────────────────────────
 
-const VIEWPORT = { once: true, margin: "-80px" };
+function MemberCard({ name, role, src, index }: {
+  name: string;
+  role: string;
+  src: string;
+  index: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.6, delay: index * 0.08, ease: EASE_OUT }}
+      className="group"
+    >
+      {/* Photo — ratio carré, zéro border-radius */}
+      <div className="relative aspect-square overflow-hidden bg-foreground/10">
+        {src ? (
+          // biome-ignore lint/performance/noImgElement: image externe
+          <img
+            src={src}
+            alt={name}
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+        ) : (
+          /* Fallback initiale */
+          <div
+            className="flex h-full w-full items-center justify-center"
+            style={{ backgroundColor: "var(--color-brew-black)" }}
+          >
+            <span
+              className="text-5xl font-black uppercase opacity-20"
+              style={{ color: "var(--color-brew-acid)" }}
+            >
+              {name.charAt(0)}
+            </span>
+          </div>
+        )}
+
+        {/* Hover overlay — ligne acide en bas */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-[3px] origin-left scale-x-0 transition-transform duration-500 group-hover:scale-x-100"
+          style={{ backgroundColor: "var(--color-brew-acid)" }}
+        />
+      </div>
+
+      {/* Infos */}
+      <div className="mt-3">
+        <p className="text-sm font-black uppercase tracking-tight">{name}</p>
+        <p className="mt-0.5 text-[11px] uppercase tracking-widest text-foreground/40">{role}</p>
+      </div>
+    </motion.div>
+  );
+}
+
+function SectionTrombi() {
+  return (
+    <section className="mx-auto max-w-5xl px-6 py-32 sm:px-12">
+      {/* Header section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.7, ease: EASE_OUT }}
+        className="mb-16"
+      >
+        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.3em] text-foreground/30">
+          03 — Collectif
+        </p>
+        <h2 className="text-4xl font-black uppercase leading-none tracking-tighter sm:text-6xl">
+          Les résidents
+        </h2>
+      </motion.div>
+
+      {/* Grille */}
+      <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+        {TEAM_MEMBERS.map((member, i) => (
+          <MemberCard
+            key={member.name}
+            name={member.name}
+            role={member.role}
+            src={member.src}
+            index={i}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ─── Export ───────────────────────────────────────────────────────────────────
 
 export function AboutContent() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
-      {/* ===================== HERO ===================== */}
-      <motion.header
-        initial="hidden"
-        animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.12 } } }}
-        className="mb-32"
-      >
-        <motion.h1
-          variants={fadeUp}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="text-6xl font-black uppercase leading-[0.9] tracking-tighter sm:text-8xl md:text-9xl"
-        >
-          About
-          <CoffeeBean className="ml-2 inline-block align-top text-3xl sm:text-5xl" />
-        </motion.h1>
-        <motion.p
-          variants={fadeUp}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-6 max-w-xl border-l-4 border-[#A6FF3E] pl-5 text-lg font-medium uppercase leading-snug tracking-tight text-foreground/70"
-        >
-          [À REMPLIR] Le tagline du collectif — une phrase qui claque, l&apos;ADN de Brew FM en une
-          ligne.
-        </motion.p>
-      </motion.header>
-
-      {/* ===================== 1. ORIGINE ===================== */}
-      <motion.section
-        initial="hidden"
-        whileInView="visible"
-        viewport={VIEWPORT}
-        variants={{ visible: { transition: { staggerChildren: 0.15 } } }}
-        className="mb-32 grid items-center gap-10 md:grid-cols-2"
-      >
-        <motion.div variants={fadeUp} transition={{ duration: 0.6 }}>
-          <span className="mb-4 inline-block bg-foreground px-3 py-1 text-sm font-black uppercase tracking-widest text-background">
-            01 — Origine
-          </span>
-          <h2 className="mb-6 text-4xl font-black uppercase leading-none tracking-tight sm:text-5xl">
-            [À REMPLIR] Comment tout a commencé
-          </h2>
-          <p className="text-base leading-relaxed text-foreground/70 sm:text-lg">
-            [À REMPLIR] L&apos;histoire de la naissance du collectif. Le déclic, l&apos;année, les
-            premières soirées. Pourquoi café + musique électronique. Deux ou trois paragraphes qui
-            racontent d&apos;où vous venez.
-          </p>
-        </motion.div>
-        <motion.div variants={fadeUp} transition={{ duration: 0.6 }}>
-          <MediaPlaceholder label="Photo d'archive / première soirée" ratio="4/3" />
-        </motion.div>
-      </motion.section>
-
-      {/* ===================== 2. CONCEPT ===================== */}
-      <motion.section
-        initial="hidden"
-        whileInView="visible"
-        viewport={VIEWPORT}
-        variants={{ visible: { transition: { staggerChildren: 0.15 } } }}
-        className="mb-32"
-      >
-        {/* Bandeau concept pleine largeur, brutaliste */}
-        <motion.div
-          variants={fadeUp}
-          transition={{ duration: 0.6 }}
-          className="border-4 border-foreground bg-[#A6FF3E] p-8 text-background sm:p-12"
-        >
-          <span className="mb-4 inline-block text-sm font-black uppercase tracking-widest">
-            02 — Concept
-          </span>
-          <p className="text-3xl font-black uppercase leading-[0.95] tracking-tight sm:text-5xl">
-            Club <span className="opacity-50">in the</span> Coffee shop
-            <br />
-            Coffee shop <span className="opacity-50">in the</span> Club
-          </p>
-        </motion.div>
-        <motion.div
-          variants={fadeUp}
-          transition={{ duration: 0.6 }}
-          className="mt-8 grid gap-8 md:grid-cols-2"
-        >
-          <MediaPlaceholder label="GIF ambiance coffee shop" ratio="16/9" />
-          <p className="self-center text-base leading-relaxed text-foreground/70 sm:text-lg">
-            [À REMPLIR] Explique le concept. On ramène le club dans les coffee shops, et
-            l&apos;esprit café dans les clubs. Ce que ça veut dire concrètement, l&apos;expérience
-            qu&apos;on vit en venant à un event Brew FM.
-          </p>
-        </motion.div>
-      </motion.section>
-
-      {/* ===================== 3. ÉQUIPE ===================== */}
-      <motion.section
-        initial="hidden"
-        whileInView="visible"
-        viewport={VIEWPORT}
-        variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
-        className="mb-32"
-      >
-        <motion.div variants={fadeUp} transition={{ duration: 0.6 }} className="mb-10">
-          <span className="mb-4 inline-block bg-foreground px-3 py-1 text-sm font-black uppercase tracking-widest text-background">
-            03 — Équipe
-          </span>
-          <h2 className="text-4xl font-black uppercase leading-none tracking-tight sm:text-6xl">
-            Le collectif
-          </h2>
-        </motion.div>
-
-        {/* Grille de membres */}
-        <div className="grid grid-cols-2 gap-5 sm:grid-cols-3">
-          {["[MEMBRE 1]", "[MEMBRE 2]", "[MEMBRE 3]", "[MEMBRE 4]", "[MEMBRE 5]", "[MEMBRE 6]"].map(
-            (name) => (
-              <motion.div key={name} variants={fadeUp} transition={{ duration: 0.5 }}>
-                <div className="border-4 border-foreground">
-                  <MediaPlaceholder label="Portrait" ratio="1/1" />
-                </div>
-                <p className="mt-3 text-lg font-black uppercase tracking-tight">{name}</p>
-                <p className="text-xs font-medium uppercase tracking-widest text-foreground/40">
-                  [Rôle]
-                </p>
-              </motion.div>
-            ),
-          )}
-        </div>
-      </motion.section>
-
-      {/* ===================== 4. VISION ===================== */}
-      <motion.section
-        initial="hidden"
-        whileInView="visible"
-        viewport={VIEWPORT}
-        variants={{ visible: { transition: { staggerChildren: 0.15 } } }}
-        className="mb-16"
-      >
-        <motion.div variants={fadeUp} transition={{ duration: 0.6 }}>
-          <span className="mb-4 inline-block bg-foreground px-3 py-1 text-sm font-black uppercase tracking-widest text-background">
-            04 — Vision
-          </span>
-        </motion.div>
-        <motion.h2
-          variants={fadeUp}
-          transition={{ duration: 0.6 }}
-          className="text-5xl font-black uppercase leading-[0.9] tracking-tighter sm:text-7xl md:text-8xl"
-        >
-          [À REMPLIR]
-          <br />
-          Où on <span className="text-[#A6FF3E]">va</span>
-        </motion.h2>
-        <motion.p
-          variants={fadeUp}
-          transition={{ duration: 0.6 }}
-          className="mt-8 max-w-2xl text-base leading-relaxed text-foreground/70 sm:text-lg"
-        >
-          [À REMPLIR] La vision long terme. Les ambitions du collectif, ce que vous voulez
-          construire, l&apos;impact recherché sur la scène parisienne / au-delà.
-        </motion.p>
-      </motion.section>
-    </div>
+    <main>
+      <SectionHero />
+      <SectionTeam />
+      <SectionTrombi />
+    </main>
   );
 }

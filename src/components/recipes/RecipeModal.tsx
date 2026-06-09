@@ -19,11 +19,11 @@
  * Pas de border ni border-radius. Image en N&B normal (sans bitmap/contraste).
  */
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, type Variants } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import type { Recipe } from "@/types/domain/recipe";
 
-const PEEK_REVEAL = 30; // px visibles au repos
+const PEEK_REVEAL = 36; // px visibles au repos
 const HOVER_EXTRA = 90; // px révélés en plus au hover
 const PEEK_MAX_VH = 22; // hauteur visible au repos (vh)
 const HOVER_MAX_VH = 34;
@@ -148,10 +148,10 @@ function TicketBody({ recipe }: { recipe: Recipe }) {
 export function RecipeModal({ recipe }: { recipe: Recipe }) {
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
-  // Calcul synchrone au 1er rendu (évite que le ticket parte du centre).
-  const [peekX, setPeekX] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth / 2 - PEEK_REVEAL : 0,
-  );
+  // peekX démarre à 0 (identique SSR/client → pas de mismatch d'hydratation).
+  // La vraie valeur est calculée après montage, et l'entrée s'anime à ce
+  // moment-là (offscreen → peek).
+  const [peekX, setPeekX] = useState(0);
   // Désactive l'animation au tout premier rendu (placement direct).
   const [ready, setReady] = useState(false);
   const ticketRef = useRef<HTMLDivElement | null>(null);
@@ -181,13 +181,32 @@ export function RecipeModal({ recipe }: { recipe: Recipe }) {
     };
   }, [open]);
 
-  const state = !ready ? "peek" : open ? "open" : hovered ? "hover" : "peek";
+  const state = open ? "open" : hovered ? "hover" : "peek";
 
-  const variants = {
-    peek: { rotate: ROTATION, x: peekX, y: 0, maxHeight: `${PEEK_MAX_VH}vh` },
-    hover: { rotate: ROTATION, x: peekX - HOVER_EXTRA, y: 0, maxHeight: `${HOVER_MAX_VH}vh` },
-    open: { rotate: 0, x: 0, y: 0, maxHeight: `${OPEN_MAX_VH}vh` },
+  const variants: Variants = {
+    // Hors-champ : complètement à droite, hors écran (point de départ à l'entrée).
+    offscreen: { rotate: ROTATION, x: peekX + TICKET_WIDTH, y: 0, maxHeight: `${PEEK_MAX_VH}vh` },
+    // Entrée vers peek : lente et douce (tween bezier), pas de rebond.
+    peek: {
+      rotate: ROTATION,
+      x: peekX,
+      y: 0,
+      maxHeight: `${PEEK_MAX_VH}vh`,
+      transition: { duration: 1.1, ease: [0.22, 1, 0.36, 1] as const },
+    },
+    hover: {
+      rotate: ROTATION,
+      x: peekX - HOVER_EXTRA,
+      y: 0,
+      maxHeight: `${HOVER_MAX_VH}vh`,
+      transition: SPRING,
+    },
+    open: { rotate: 0, x: 0, y: 0, maxHeight: `${OPEN_MAX_VH}vh`, transition: SPRING },
   };
+
+  // Rendu client uniquement (après calcul de peekX) → pas de mismatch SSR, et
+  // l'entrée part bien du hors-champ droit (peekX correct) vers peek.
+  if (!ready) return null;
 
   return (
     <>
@@ -197,7 +216,7 @@ export function RecipeModal({ recipe }: { recipe: Recipe }) {
           <motion.button
             type="button"
             aria-label="Fermer la recette"
-            className="fixed inset-0 z-40 bg-black/60"
+            className="absolute inset-0 z-40 bg-black/60"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -206,15 +225,14 @@ export function RecipeModal({ recipe }: { recipe: Recipe }) {
         )}
       </AnimatePresence>
 
-      {/* Wrapper centré ; le ticket s'anime à l'intérieur */}
-      <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
+      {/* Wrapper centré (dans le hero, non sticky) ; le ticket s'anime dedans */}
+      <div className="pointer-events-none absolute inset-0 z-50 flex items-center justify-center">
         <motion.div
           ref={ticketRef}
+          initial="offscreen"
           animate={state}
           variants={variants}
-          transition={ready ? SPRING : { duration: 0 }}
-          style={{ width: TICKET_WIDTH }}
-          className={`pointer-events-auto relative bg-[#FAF7F0] px-6 py-6 ${
+          className={`pointer-events-auto relative w-[340px] bg-[#FAF7F0] px-6 py-6 ${
             open ? "no-scrollbar overflow-y-auto" : "overflow-hidden"
           }`}
         >

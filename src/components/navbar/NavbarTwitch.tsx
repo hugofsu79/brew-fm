@@ -133,14 +133,14 @@ export function NavbarTwitch({ status }: { status: TwitchStatus }) {
         <button
           type="button"
           data-source="brewfm-site-banner"
-          className="hidden items-center gap-2 rounded-full border border-foreground/15 px-3 py-1.5 text-sm transition-colors hover:border-foreground/40 hover:bg-foreground/5 md:flex"
+          className="hidden items-center gap-2 rounded-full bg-[var(--color-brew-acid)] text-[var(--color-brew-black)] px-3 py-1.5 text-sm transition-opacity hover:opacity-80 md:flex"
         >
           <TwitchLogo />
-          <span className="text-foreground/70">{status.title}</span>
+          <span className="opacity-70">{status.title}</span>
           <span className="font-medium">
             <Countdown target={status.startsAt} />
           </span>
-          <CalendarPlusIcon className="size-4 text-foreground/50" aria-hidden="true" />
+          <CalendarPlusIcon className="size-4 opacity-50" aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
 

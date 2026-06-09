@@ -16,9 +16,10 @@ type NavbarLogoProps = {
   className?: string;
   /** Taille en pixels (carré). Default 36. */
   size?: number;
+  style?: React.CSSProperties;
 };
 
-export function NavbarLogo({ className, size = 36 }: NavbarLogoProps) {
+export function NavbarLogo({ className, size = 36, style }: NavbarLogoProps) {
   // Le ratio original est 36×48 (3:4)
   const width = size;
   const height = (size * 48) / 36;
@@ -31,6 +32,7 @@ export function NavbarLogo({ className, size = 36 }: NavbarLogoProps) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={cn("inline-block", className)}
+      style={style}
       aria-label="Brew FM"
       role="img"
     >

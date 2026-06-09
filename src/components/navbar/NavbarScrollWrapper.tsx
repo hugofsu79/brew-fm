@@ -51,7 +51,7 @@ export function NavbarScrollWrapper({ children }: { children: React.ReactNode })
   if (isHome) {
     return (
       <header
-        className={`fixed inset-x-0 top-0 z-40 flex items-center justify-between gap-4 px-4 py-4 text-white mix-blend-difference transition-transform duration-300 ${
+        className={`fixed inset-x-0 top-0 z-40 flex items-center justify-between gap-4 px-4 py-4 --color-brew-acid transition-transform duration-300 ${
           visible ? "translate-y-0" : "-translate-y-full"
         }`}
       >

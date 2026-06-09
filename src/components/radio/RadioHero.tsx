@@ -23,10 +23,11 @@
 
 import { ChevronDownIcon, PauseIcon, PlayIcon } from "lucide-react";
 import { motion } from "motion/react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { RecipeModal } from "@/components/recipes/RecipeModal";
 import type { RadioNowPlaying } from "@/types/domain/radio";
 import type { Recipe } from "@/types/domain/recipe";
+import { useRadioPlayer } from "./RadioPlayerProvider";
 import { UpNextTicker } from "./UpNextTicker";
 
 /** Historique des derniers morceaux (dropdown). */
@@ -105,7 +106,15 @@ function RevealUp({ children, delay = 0 }: { children: React.ReactNode; delay?: 
 const BAR_COUNT = 48;
 const BOUNCE = [0.34, 1.56, 0.64, 1] as const; // bezier "back out" (rebond)
 
-function ProgressBar({ durationSec, elapsedSec }: { durationSec: number; elapsedSec: number }) {
+function ProgressBar({
+  durationSec,
+  elapsedSec,
+  active,
+}: {
+  durationSec: number;
+  elapsedSec: number;
+  active: boolean;
+}) {
   const ratio = durationSec > 0 ? Math.min(1, elapsedSec / durationSec) : 0;
   const remaining = Math.max(0, durationSec - elapsedSec);
   const filledCount = Math.round(ratio * BAR_COUNT);
@@ -120,54 +129,40 @@ function ProgressBar({ durationSec, elapsedSec }: { durationSec: number; elapsed
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex h-10 items-end gap-[2px]">
+      <div className="flex h-10 items-end gap-2px">
         {heights.map((h, i) => (
           <motion.div
             // biome-ignore lint/suspicious/noArrayIndexKey: waveform à longueur fixe, ordre stable
             key={i}
-            className="flex-1 origin-bottom rounded-[1px]"
+            className="flex-1 origin-bottom rounded-[1px] transition-colors duration-300"
             style={{ height: `${h}%`, backgroundColor: i < filledCount ? "#A6FF3E" : "#05180A" }}
+            // Plate dès le 1er rendu (initial=0) ; se déploie au play (active).
             initial={{ scaleY: 0 }}
-            animate={{ scaleY: 1 }}
-            transition={{ duration: 0.5, ease: BOUNCE, delay: i * 0.012 }}
+            animate={{ scaleY: active ? 1 : 0 }}
+            transition={{ duration: 0.5, ease: BOUNCE, delay: active ? i * 0.012 : 0 }}
           />
         ))}
       </div>
-      <span className="self-end font-mono text-xs font-semibold text-white mix-blend-difference">
-        -{fmt(remaining)}
-      </span>
+      {active && (
+        <span className="self-end font-mono text-xs font-semibold text-white mix-blend-difference">
+          -{fmt(remaining)}
+        </span>
+      )}
     </div>
   );
 }
 
 export function RadioHero({ data, recipe }: { data: RadioNowPlaying; recipe: Recipe | null }) {
-  const { current, streamUrl } = data;
-  const [playing, setPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { current } = data;
+  const { isPlaying, toggle, setTrack, currentTime, duration } = useRadioPlayer();
 
-  function togglePlay() {
-    const audio = audioRef.current;
-    if (!audio || !streamUrl) {
-      setPlaying((v) => !v); // mock : toggle visuel seulement
-      return;
-    }
-    if (playing) {
-      audio.pause();
-      setPlaying(false);
-    } else {
-      audio.play().then(
-        () => setPlaying(true),
-        () => setPlaying(false),
-      );
-    }
-  }
+  // Déclare le morceau courant au player global (alimente aussi le mini-player).
+  useEffect(() => {
+    setTrack({ artist: current.artist, title: current.title, artUrl: current.artUrl });
+  }, [current.artist, current.title, current.artUrl, setTrack]);
 
   return (
     <section className="relative h-dvh overflow-hidden bg-background text-foreground">
-      {/* Audio (src vide en mock → inactif) */}
-      {/* biome-ignore lint/a11y/useMediaCaption: flux radio live, pas de sous-titres */}
-      <audio ref={audioRef} src={streamUrl || undefined} preload="none" />
-
       {/* Cover plein écran (fond) + voile pour lisibilité du texte */}
       {current.artUrl && (
         <>
@@ -207,11 +202,11 @@ export function RadioHero({ data, recipe }: { data: RadioNowPlaying; recipe: Rec
       {/* Bouton play centré sur l'écran — pas d'ombre */}
       <button
         type="button"
-        onClick={togglePlay}
-        aria-label={playing ? "Mettre en pause" : "Lire le direct"}
+        onClick={toggle}
+        aria-label={isPlaying ? "Mettre en pause" : "Lire le direct"}
         className="absolute left-1/2 top-1/2 z-10 grid size-20 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-2xl bg-[#A6FF3E] text-[#05180A] transition-transform hover:scale-105 active:scale-95 sm:size-24"
       >
-        {playing ? (
+        {isPlaying ? (
           <PauseIcon className="size-9 sm:size-10" fill="currentColor" />
         ) : (
           <PlayIcon className="size-9 translate-x-0.5 sm:size-10" fill="currentColor" />
@@ -241,7 +236,11 @@ export function RadioHero({ data, recipe }: { data: RadioNowPlaying; recipe: Rec
       {/* Progression (bas droite) — à l'opposé du genre.
           Barre fine acide (écoulé) / vert foncé (restant) + temps restant -M:SS */}
       <div className="absolute bottom-16 right-6 z-10 w-48 sm:right-10 sm:w-64">
-        <ProgressBar durationSec={current.durationSec} elapsedSec={current.elapsedSec} />
+        <ProgressBar
+          durationSec={duration > 0 ? duration : current.durationSec}
+          elapsedSec={duration > 0 ? currentTime : current.elapsedSec}
+          active={isPlaying}
+        />
       </div>
 
       {/* Onglet vertical "Recette du mois" (droite) — modale au clic.

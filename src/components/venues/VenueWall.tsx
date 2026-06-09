@@ -3,20 +3,8 @@
 /**
  * VenueWall — Mur de noms de lieux en flux typographique continu.
  *
- * Rendu (cf. capture) :
- *   - Les noms s'écrivent en GROS, MAJUSCULES, poids medium, en flux continu
- *     (ils se wrap naturellement comme un paragraphe).
- *   - Chaque nom est séparé du suivant par le grain de café vert (SVG).
- *   - Au repos : noms en opacité 40%, aucun background.
- *   - Au survol d'un nom : sa cover remplit TOUTE la section en background
- *     (géré par le parent via onHoverChange), le nom hover passe à 100%,
- *     les autres restent à 40%.
- *   - Click → playlist YouTube du lieu (nouvel onglet) si définie.
- *
- * Les interactions (hover/focus) vivent sur l'élément cliquable lui-même
- * (<a> si playlist, <button> sinon) → conforme a11y, pas de span interactif.
- *
- * Reçoit les lieux DÉJÀ filtrés par format.
+ * Identique à l'original, seul changement : les noms sont centrés
+ * (flex flex-wrap justify-center items-center sur le wrapper).
  */
 
 import type { Venue } from "@/types/domain/venue";
@@ -94,15 +82,14 @@ export function VenueWall({
   }
 
   return (
-    <div className="text-center text-4xl font-medium uppercase leading-[1.15] tracking-tight sm:text-6xl sm:leading-[1.1]">
+    <div className="flex flex-wrap items-center justify-center gap-y-2 text-4xl font-medium uppercase leading-[1.15] tracking-tight sm:text-6xl sm:leading-[1.1]">
       {venues.map((venue, i) => (
-        <span key={venue.id}>
+        <span key={venue.id} className="flex items-center">
           <VenueName
             venue={venue}
             isHovered={hoveredId === venue.id}
             onHoverChange={onHoverChange}
           />
-          {/* Séparateur grain de café entre chaque lieu (pas après le dernier) */}
           {i < venues.length - 1 && <CoffeeBean />}
         </span>
       ))}

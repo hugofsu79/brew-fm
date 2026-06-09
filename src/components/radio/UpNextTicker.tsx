@@ -28,7 +28,7 @@ export function UpNextTicker({ tracks }: { tracks: RadioTrack[] }) {
     >
       {/* Label fixe "UP NEXT →" */}
       <span className="shrink-0 px-4 text-sm font-black uppercase italic tracking-tight sm:px-6 sm:text-base">
-        Up next →
+        Up next
       </span>
 
       {/* File statique : 1er à 100%, le reste à 40% */}
